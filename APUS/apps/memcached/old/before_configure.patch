@@ -1,0 +1,10 @@
+--- src/stats/mcp_call_stats.c	2016-03-21 22:08:47.588000000 +0800
++++ src/stats/new_mcp_call_stats.c	2016-03-21 21:51:51.288000000 +0800
+@@ -85,6 +85,7 @@
+ 
+     call->rsp.recv_start = timer_now();
+     req_rsp_time = timer_now() - call->req.send_start;
++    log_stderr("Response time: %.8f s", req_rsp_time);
+ 
+     stats->req_rsp_sum += req_rsp_time;
+     stats->req_rsp_sum2 += SQUARE(req_rsp_time);

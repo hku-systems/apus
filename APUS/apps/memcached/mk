@@ -1,0 +1,39 @@
+#!/bin/bash
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+MCP_VER=0.1.1
+
+#apt-get update
+#apt-get install -y libevent-dev g++ make wget
+
+cd $RDMA_ROOT/apps/memcached
+
+#mcperf install to test memcached
+if [ ! -f mcperf-$MCP_VER.tar.gz ]
+then
+    wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/twemperf/mcperf-$MCP_VER.tar.gz
+else
+    echo "mcperf-$MCP_VER.tar.gz exists."
+fi
+tar zxf mcperf-$MCP_VER.tar.gz
+rm mcperf-$MCP_VER.tar.gz
+cd mcperf-$MCP_VER
+./configure --prefix=$RDMA_ROOT/apps/memcached/mcperf
+#cp ../before_configure.patch .
+#patch -p0 < before_configure.patch
+#if [ $? -ne 0 ]
+#then
+#    echo "Couldn't apply before_configure.patch" 
+#    exit 1
+#fi
+
+
+make 
+make install
+cd ..
+rm -rf mcperf-$MCP_VER
+
+scp -rp ./mcperf $LOGNAME@$(cat $RDMA_ROOT/apps/env/test_host):$RDMA_ROOT/apps/memcached
+

@@ -1,0 +1,8 @@
+libdir=/home/yjy/hku/criu/out/lib
+includedir=/home/yjy/hku/criu/out/include/
+
+Name: CRIU
+Description: RPC library for userspace checkpoint and restore
+Version: 2.0
+Libs: -L${libdir} -lcriu
+Cflags: -I${includedir}

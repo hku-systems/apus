@@ -1,0 +1,4 @@
+#!/bin/bash
+
+env LD_LIBRARY_PATH=.  LD_PRELOAD=/home/hkucs/Documents/RDMA/target/interpose.so node_id=$1 cfg_path=./nodes.local.cfg ./mysqld-server &
+

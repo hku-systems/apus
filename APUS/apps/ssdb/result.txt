@@ -1,0 +1,35 @@
+ssdb-bench - SSDB benchmark tool, 1.9.2
+Copyright (c) 2013-2015 ssdb.io
+
+Usage:
+    /usr/local/ssdb/ssdb-bench [ip] [port] [requests] [clients]
+
+Options:
+    ip          server ip (default 127.0.0.1)
+    port        server port (default 8888)
+    requests    Total number of requests (default 10000)
+    clients     Number of parallel connections (default 50)
+
+========== set ==========
+qps: 29977, time: 0.334 s
+========== get ==========
+qps: 65373, time: 0.153 s
+========== del ==========
+qps: 32698, time: 0.306 s
+========== hset ==========
+qps: 31667, time: 0.316 s
+========== hget ==========
+qps: 63088, time: 0.159 s
+========== hdel ==========
+qps: 32475, time: 0.308 s
+========== zset ==========
+qps: 31855, time: 0.314 s
+========== zget ==========
+qps: 62920, time: 0.159 s
+========== zdel ==========
+qps: 32214, time: 0.310 s
+========== qpush ==========
+qps: 32056, time: 0.312 s
+========== qpop ==========
+qps: 32470, time: 0.308 s
+

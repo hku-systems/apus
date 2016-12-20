@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+ZOO_VER=3.4.8
+
+cd $RDMA_ROOT/apps/zookeeper
+
+#download zookeeper
+if [ ! -f zookeeper-$ZOO_VER.tar.gz ]; then
+    wget http://archive.apache.org/dist/zookeeper/zookeeper-$ZOO_VER/zookeeper-$ZOO_VER.tar.gz
+fi
+
+tar xzf zookeeper-$ZOO_VER.tar.gz
+rm zookeeper-$ZOO_VER.tar.gz
+
+mv zookeeper-$ZOO_VER install
+
+cd install
+mkdir data logs
+
+cp ./conf/zoo_sample.cfg ./conf/zoo.cfg
+
+sed -i '/dataDir/'d ./conf/zoo.cfg
+
+sed -i '$a dataDir='"$RDMA_ROOT"'/apps/zookeeper/install/data' ./conf/zoo.cfg
+sed -i '$a dataLogDir='"$RDMA_ROOT"'/apps/zookeeper/install/logs' ./conf/zoo.cfg
+
+SERVER_ONE_IP=$(cat $RDMA_ROOT/apps/env/local_host)
+SERVER_ONE=$LOGNMAE@$SERVER_ONE_IP
+SERVER_TWO_IP=$(cat $RDMA_ROOT/apps/env/remote_host1)
+SERVER_TWO=$LOGNMAE@$SERVER_TWO_IP
+SERVER_THR_IP=$(cat $RDMA_ROOT/apps/env/remote_host2)
+SERVER_THR=$LOGNMAE@$SERVER_THR_IP
+
+sed -i '$a server.1='"$SERVER_ONE_IP"':2888:3888' ./conf/zoo.cfg
+sed -i '$a server.2='"$SERVER_TWO_IP"':2888:3888' ./conf/zoo.cfg
+sed -i '$a server.3='"$SERVER_THREE_IP"':2888:3888' ./conf/zoo.cfg
+
+cd ..
+
+echo "2" > $RDMA_ROOT/apps/zookeeper/install/data/myid
+scp -rp $RDMA_ROOT/apps/zookeeper/install $SERVER_TWO:$RDMA_ROOT/apps/zookeeper
+echo "3" > $RDMA_ROOT/apps/zookeeper/install/data/myid
+scp -rp $RDMA_ROOT/apps/zookeeper/install $SERVER_THREE:$RDMA_ROOT/apps/zookeeper
+echo "1" > $RDMA_ROOT/apps/zookeeper/install/data/myid
+
+

@@ -1,0 +1,3 @@
+#!/bin/bash
+#run set transactions in redis
+redis-benchmark -c 1 -n 50000 -d 10 -h 127.0.0.1 -p 6379 -t set > result.txt

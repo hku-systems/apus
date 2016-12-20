@@ -1,0 +1,25 @@
+# Template used to create this container: /usr/share/lxc/templates/lxc-ubuntu
+# Parameters passed to the template: -r trusty -a amd64
+# For additional config options, please look at lxc.container.conf(5)
+
+# Common configuration
+#lxc.include = /usr/share/lxc/config/ubuntu.common.conf
+
+# Container specific configuration
+lxc.rootfs = /var/lib/lxc/u1/rootfs
+lxc.utsname = u1
+lxc.arch = amd64
+
+# Network configuration
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+lxc.network.hwaddr = 00:16:3e:a8:12:86
+
+#lxc.console = none
+#lxc.tty = 0
+lxc.cgroup.devices.deny = c 5:1 rwm
+lxc.rootfs = /var/lib/lxc/u1/rootfs
+lxc.mount = /var/lib/lxc/u1/fstab
+lxc.mount.auto = proc:rw sys:rw cgroup-full:rw
+lxc.aa_profile = unconfined

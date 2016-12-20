@@ -1,0 +1,81 @@
+#/bin/bash
+
+config_file="nodes.local.cfg"
+rm -rf $config_file
+
+touch $config_file
+
+echo "#configuration files for the replicated state machine node group
+
+group_size = $1;
+
+mgr_global_config = {
+    rsm = 1;
+    check_output = 0;
+};
+
+mgr_config =(
+" >> $config_file
+
+echo "    {
+        ip_address = "127.0.0.1";
+        port       = $3;
+        db_name    = "node_test_0";
+        time_stamp_log = 0;
+        sys_log = 1;
+        stat_log = 0;
+        req_log = 0;
+    }," >> $config_file
+
+for id in $( seq 1 $[$1-1])
+do
+config_port=$[$3+$[$[$id-1]/$[$2-1]]]
+echo "    {
+        ip_address = "127.0.0.1";
+        port       = $config_port;
+        db_name    = "node_test_$id";
+        time_stamp_log = 0;
+        sys_log = 1;
+        stat_log = 0;
+        req_log = 0;
+    }," >> $config_file
+done
+
+echo ");
+
+zookeeper_config =(" >> $config_file
+
+for id in $( seq 0 $[$1-1])
+do
+echo "    {
+        port       = 9001;
+    }," >> $config_file
+done
+
+echo ");" >> $config_file
+
+echo "consensus_config =(" >> $config_file
+
+echo "    {
+        ip_address = "10.22.1.1";
+        port       = 8000;
+        db_name    = "node_test_0";
+        sys_log = 0;
+        stat_log = 0;
+    }," >> $config_file
+
+
+for id in $( seq 1 $[ $1 - 1 ])
+do
+consensus_port=$[8000+$[$[$id-1]/$[$2-1]]]
+ip_end=$[$[$id-1]%$[$2-1]+2]
+echo "    {
+        ip_address = "10.22.1.$ip_end";
+        port       = $consensus_port;
+        db_name    = "node_test_$id";
+        sys_log = 0;
+        stat_log = 0;
+    }," >> $config_file
+done
+
+echo ");" >> $config_file

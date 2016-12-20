@@ -1,0 +1,15 @@
+chosed mode:5
+Game Over. I did 100000 times write. And block size is 1024
+% time     seconds  usecs/call     calls      function
+------ ----------- ----------- --------- --------------------
+ 40.95    9.496829          47    200000 clock_gettime
+ 38.27    8.873298          88    100000 write
+ 20.78    4.817896          48    100000 fprintf
+  0.00    0.000133          66         2 printf
+  0.00    0.000106         106         1 memalign
+  0.00    0.000079          79         1 ftruncate
+  0.00    0.000065          65         1 open
+  0.00    0.000063          63         1 fopen
+  0.00    0.000052          52         1 atoi
+------ ----------- ----------- --------- --------------------
+100.00   23.188521                400007 total

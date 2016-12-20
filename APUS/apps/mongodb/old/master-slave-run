@@ -1,0 +1,5 @@
+#!/bin/bash
+YCSB_VER=0.7.0
+cd ycsb-mongodb-binding-$YCSB_VER
+./bin/ycsb load mongodb -P ../workload -p mongodb.url=mongodb://127.0.0.1:27017 -p measurementtype=timeseries
+./bin/ycsb run mongodb -P ../workload -p mongodb.url=mongodb://127.0.0.1:27017 -p measurementtype=timeseries

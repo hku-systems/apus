@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# Copyright (c) 2016 HLRS, University of Stuttgart. All rights reserved.
+#
+# Copyright (c) 2014-2015 ETH-Zurich. All rights reserved.
+#
+# Author(s): Marius Poke <marius.poke@inf.ethz.ch>
+#
+
+
+define(){ IFS='\n' read -r -d '' ${1} || true; }
+
+define HELP <<'EOF'
+Script for building DARE
+usage  : $0 [options]
+options: [--prefix=DIR]                # Installation directory
+         [--with-ev=DIR]               # libev installation directory
+         [--with-ibv=DIR]              # libibverbs installation directory
+EOF
+
+usage () {
+    echo -e "$HELP"
+}
+
+ErrorAndExit () {
+  echo "ERROR: $1"
+  exit 1
+}
+
+CheckDirectory () {
+    if [ ! -d $2 ]
+    then
+       ErrorAndExit "$1: Folder $2 not found."
+    fi 
+}
+
+ForceAbsolutePath () {
+  case "$2" in
+    /* )
+      ;;
+    *)
+      ErrorAndExit "Expected an absolute path for $1"
+      ;;
+  esac
+}
+
+########################
+# Command line parsing #
+########################
+
+PREFIX=$PWD
+EVDIR=""
+IBVDIR="/usr"
+MF="Makefile"
+
+for arg in "$@"
+do
+  case ${arg} in
+  --help|-help|-h)
+        usage
+        exit 1
+        ;;
+  --prefix=*)
+        PREFIX=`echo $arg | sed -e 's/--prefix=//'`
+        PREFIX=`eval echo ${PREFIX}`    # tilde and variable expansion
+        ForceAbsolutePath "--prefix" "${PREFIX}"
+        ;;
+    --with-ev=*)
+        EVDIR=`echo $arg | sed -e 's/--with-ev=//'`
+        EVDIR=`eval echo ${EVDIR}`    # tilde and variable expansion
+        CheckDirectory "--with-ev" "${EVDIR}"
+        ;;
+    --with-ibv=*)
+        IBVDIR=`echo $arg | sed -e 's/--with-ibv=//'`
+        IBVDIR=`eval echo ${IBVDIR}`    # tilde and variable expansion
+        CheckDirectory "--with-ibv" "${IBVDIR}"
+        ;;
+  esac
+done
+
+echo "$0 $@" > config.log
+
+if [[ "x$EVDIR" == "x" ]]; then
+    ErrorAndExit "No libev installation directory defined: --with-ev."
+fi
+
+
+# Generate Makefile from Makefile.in
+cp ${MF}.in ${MF}
+sed -e 's,#PREFIX#,'${PREFIX}',' \
+    -e 's,#EV_LIB#,'${EVDIR}'/lib/libev.a,' \
+    -e 's,#EV_INCLUDE#,-I'${EVDIR}'/include,' \
+    -e 's,#IBV_LIB#,'-L${IBVDIR}'/lib -libverbs,' \
+    -e 's,#IBV_INCLUDE#,-I'${IBVDIR}'/include,' \
+    ${MF} > sed.out && mv sed.out ${MF} || exit 1
+

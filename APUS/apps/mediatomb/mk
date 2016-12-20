@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+MED_VER=0.12.1
+
+cd $RDMA_ROOT/apps/mediatomb
+
+if [ ! -f mediatomb-$MED_VER.tar.gz ];
+then
+	wget http://downloads.sourceforge.net/mediatomb/mediatomb-$MED_VER.tar.gz
+fi
+tar zxvf mediatomb-$MED_VER.tar.gz
+cd mediatomb-$MED_VER
+patch -p1 < ../disable-multicast.patch
+./configure --prefix=$RDMA_ROOT/apps/mediatomb/install/
+
+sed -e 's/search/this->search/g' src/hash/dso_hash.h > bak.h
+mv bak.h src/hash/dso_hash.h
+
+sed -e 's/search/this->search/g' src/hash/dbo_hash.h > bak.h
+mv bak.h src/hash/dbo_hash.h
+
+sed -e 's/search/this->search/g' src/hash/dbr_hash.h > bak.h
+mv bak.h src/hash/dbr_hash.h
+
+sed -e 's/#include "nil.h"/#include <cstddef>\n#include "nil.h"/g' src/zmm/zmm.h > bak.h
+mv bak.h src/zmm/zmm.h
+
+make -j `nproc`
+make install
+
+cd $RDMA_ROOT/apps/mediatomb/
+mv ./install/bin/mediatomb ./install/bin/mediatomb-server
+
+./generate-database
+
+
+

@@ -1,0 +1,81 @@
+#!/bin/bash
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+MONGO_VER=3.2.4
+YCSB_VER=0.7.0
+
+cd $RDMA_ROOT/apps/mongodb
+
+if [ ! -f mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz ]
+then
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz
+else
+    echo "mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz exists."
+fi
+
+tar xzf mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz
+rm mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz
+
+mv mongodb-linux-x86_64-ubuntu1404-$MONGO_VER install
+
+cd install
+
+mkdir data
+
+mv ./bin/mongod ./bin/mongod-server
+
+SERVER_ONE_IP=$(cat $RDMA_ROOT/apps/env/local_host)
+SERVER_ONE=$LOGNMAE@$SERVER_ONE_IP
+SERVER_TWO_IP=$(cat $RDMA_ROOT/apps/env/remote_host1)
+SERVER_TWO=$LOGNMAE@$SERVER_TWO_IP
+SERVER_THR_IP=$(cat $RDMA_ROOT/apps/env/remote_host2)
+SERVER_THR=$LOGNMAE@$SERVER_THR_IP
+
+echo "dbpath=$RDMA_ROOT/apps/mongodb/install/data " > mongodb.conf
+echo "logpath=$RDMA_ROOT/apps/mongodb/install/data/mongod.log" >> mongodb.conf
+echo "pidfilepath=$RDMA_ROOT/apps/mongodb/install/data/mongod.pid " >> mongodb.conf
+echo "bind_ip = $SERVER_TWO_IP " >> mongodb.conf
+echo "fork = false" >> mongodb.conf
+#echo "slave = true" >> mongodb.conf
+#echo "autoresync=true" >> mongodb.conf
+#echo "oplogSize = 2048 " >> mongodb.conf
+#echo "source=$SERVER_ONE_IP:27017" >> mongodb.conf
+echo "logappend = true " >> mongodb.conf
+echo "port = 7004" >> mongodb.conf
+echo "oplogSize = 2048 " >> mongodb.conf
+cd ..
+
+scp -rp ./install  $LOGNMAE@$(cat $RDMA_ROOT/apps/env/remote_host1):$RDMA_ROOT/apps/mongodb
+
+sed -i "s/bind_ip = $SERVER_TWO_IP/bind_ip = $SERVER_THR_IP/g" ./install/mongodb.conf
+
+scp -rp ./install  $LOGNMAE@$(cat $RDMA_ROOT/apps/env/remote_host2):$RDMA_ROOT/apps/mongodb
+
+sed -i "s/bind_ip = $SERVER_THR_IP/bind_ip = $SERVER_ONE_IP/g" ./install/mongodb.conf
+#sed -i "s/slave = true/master = true/g" ./install/mongodb.conf
+#sed -i "/autoresync=true/d" ./install/mongodb.conf
+#sed -i "/source=/d" ./install/mongodb.conf
+#echo "oplogSize = 2048 " >> ./install/mongodb.conf
+
+
+if [ ! -f ycsb-mongodb-binding-$YCSB_VER.tar.gz ]
+then
+    wget https://github.com/brianfrankcooper/YCSB/releases/download/$YCSB_VER/ycsb-mongodb-binding-$YCSB_VER.tar.gz
+else 
+    echo "ycsb-mongodb-binding-$YCSB_VER.tar.gz exists"
+fi
+
+tar xzf ycsb-mongodb-binding-$YCSB_VER.tar.gz
+
+mv ycsb-mongodb-binding-$YCSB_VER  ycsb-mongodb
+
+cd ycsb-mongodb
+sed -i "s/readproportion=1/readproportion=0/g" ./workloads/workloadc
+sed -i "s/insertproportion=0/insertproportion=1/g" ./workloads/workloadc
+
+cd ..
+scp -rp ./ycsb-mongodb $LOGNAME@$(cat $RDMA_ROOT/apps/env/test_host):$RDMA_ROOT/apps/mongodb
+

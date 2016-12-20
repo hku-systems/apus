@@ -1,0 +1,13 @@
+#!/bin/bash
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+#run memcached in localhost
+$RDMA_ROOT/apps/memcached/install/bin/memcached -m 64 -l 127.0.0.1 -p 11211 -u root -P $RDMA_ROOT/apps/memcached/install/memcachedrep.pid &
+
+#test memcached using mcperf
+#mcperf -h to see help document
+./mcperf-install/bin/mcperf --server=127.0.0.1 --port=11211 --linger=0 --call-rate=0 --num-calls=100000 --conn-rate=0 --num-conns=1 --sizes=d10
+
+

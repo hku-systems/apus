@@ -1,0 +1,57 @@
+#!/bin/bash
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+cd $RDMA_ROOT/apps/clamav
+mkdir database
+
+CLAM_VER=0.99.1
+if [ ! -f clamav-$CLAM_VER.tar.gz ]; then
+    wget https://www.clamav.net/downloads/production/clamav-$CLAM_VER.tar.gz
+fi
+
+tar xzf clamav-$CLAM_VER.tar.gz
+
+cd clamav-$CLAM_VER
+
+./configure --prefix=$RDMA_ROOT/apps/clamav/install --with-dbdir=$RDMA_ROOT/apps/clamav/database
+make -j
+make install
+
+cd $RDMA_ROOT/apps/clamav
+
+sed '/Example/d' install/etc/freshclam.conf.sample > freshclam.conf
+sed '/Example/d' install/etc/clamd.conf.sample > clamd.conf
+
+echo "DatabaseDirectory $RDMA_ROOT/apps/clamav/database" >> freshclam.conf
+echo "LogFile $RDMA_ROOT/apps/clamav/server.log" >> clamd.conf
+echo "DatabaseDirectory $RDMA_ROOT/apps/clamav/database" >> clamd.conf
+echo "TCPSocket 3310" >> clamd.conf
+echo "TCPAddr 127.0.0.1" >> clamd.conf
+echo "LogVerbose yes" >> clamd.conf
+echo "Foreground yes" >> clamd.conf
+
+cp clamd.conf clamd3310.conf
+cp clamd.conf clamd3311.conf
+cp clamd.conf clamd3312.conf
+cp clamd.conf clamd3313.conf
+
+sed -i "s/TCPSocket 3310/TCPSocket 3311/g" clamd3311.conf
+sed -i "s/TCPSocket 3310/TCPSocket 3312/g" clamd3312.conf
+sed -i "s/TCPSocket 3310/TCPSocket 3313/g" clamd3313.conf
+
+./install/bin/freshclam --config-file=./freshclam.conf
+
+mv ./install/sbin/clamd ./install/sbin/clamd-server
+
+cd ..
+
+cat $RDMA_ROOT/apps/env/remote_hosts | while read line
+do
+    scp -r ./clamav $LOGNAME@${line}:$RDMA_ROOT/apps/
+done
+
+scp -r ./clamav $LOGNAME@$(cat $RDMA_ROOT/apps/env/test_host):$RDMA_ROOT/apps/
+

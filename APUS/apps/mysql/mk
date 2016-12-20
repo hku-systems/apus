@@ -1,0 +1,46 @@
+#!/bin/bash
+SQL_VER=5.6.28
+SYS_VER=0.4.12.10
+
+if [ ! -f mysql-$SQL_VER.tar.gz ]
+then
+    wget http://downloads.mysql.com/archives/get/file/mysql-$SQL_VER.tar.gz
+else
+    echo "mysql-$SQL_VER.tar.gz exists."
+fi
+
+tar xzf mysql-$SQL_VER.tar.gz
+
+cd mysql-$SQL_VER
+
+cmake -DCMAKE_INSTALL_PREFIX=$RDMA_ROOT/apps/mysql/install -DSYSCONFDIR=$RDMA_ROOT/apps/mysql/install/etc  -DMYSQL_UNIX_ADDR=$RDMA_ROOT/apps/mysql/install/data/mysql.sock -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DEXTRA_CHARSETS=all -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_MEMORY_STORAGE_ENGINE=1 -DWITH_READLINE=1 -DENABLED_LOCAL_INFILE=1 -DMYSQL_DATADIR=$RDMA_ROOT/apps/mysql/install/data -DMYSQL_USER=mysql -DWITH_DEBUG=0  -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/usr/local/boost
+
+make -j8
+make install
+
+
+cd ../install
+
+rm -rf data
+mkdir data etc conf
+
+cp ./support-files/my-default.cnf ./conf/my.cnf
+
+cd ..
+
+scp -rp ./install $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host1):$RDMA_ROOT/apps/mysql
+scp -rp ./install $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host2):$RDMA_ROOT/apps/mysql
+
+sleep 3
+
+$RDMA_ROOT/apps/mysql/install/scripts/mysql_install_db --basedir=$RDMA_ROOT/apps/mysql/install --datadir=$RDMA_ROOT/apps/mysql/install/data --user=mysql --lc-messages-dir=$RDMA_ROOT/apps/mysql/install/share/english/ --defaults-file=$RDMA_ROOT/apps/mysql/install/conf/my.cnf &
+
+ssh $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host1) "$RDMA_ROOT/apps/mysql/install/scripts/mysql_install_db --basedir=$RDMA_ROOT/apps/mysql/install --datadir=$RDMA_ROOT/apps/mysql/install/data --user=mysql --lc-messages-dir=$RDMA_ROOT/apps/mysql/install/share/english/ --defaults-file=$RDMA_ROOT/apps/mysql/install/conf/my.cnf" 
+ssh $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host2) "$RDMA_ROOT/apps/mysql/install/scripts/mysql_install_db --basedir=$RDMA_ROOT/apps/mysql/install --datadir=$RDMA_ROOT/apps/mysql/install/data --user=mysql --lc-messages-dir=$RDMA_ROOT/apps/mysql/install/share/english/ --defaults-file=$RDMA_ROOT/apps/mysql/install/conf/my.cnf" 
+
+wget http://downloads.mysql.com/source/sysbench-$SYS_VER.tar.gz
+tar xzf sysbench-$SYS_VER.tar.gz
+cd sysbench-$SYS_VER
+./configure --prefix=$RDMA_ROOT/apps/mysql/sysbench --with-mysql-includes=$RDMA_ROOT/apps/mysql/install/include --with-mysql-libs=$RDMA_ROOT/apps/mysql/install/lib
+make 
+make install

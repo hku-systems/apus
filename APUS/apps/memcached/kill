@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+#stop server
+kill $(cat $RDMA_ROOT/apps/memcached/install/memcachedrep.pid)
+rm $RDMA_ROOT/apps/memcached/install/memcachedrep.pid

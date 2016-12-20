@@ -1,0 +1,62 @@
+#!/bin/bash
+
+cmd=$1
+n=$2
+client_num=$3
+
+ip_string=$(./load_variables ip)
+ip_list=(${ip_string// / })
+ssh_user=$(./load_variables user)
+ssh_port=$(./load_variables port)
+client_server=$(./load_variables client)
+total_server=${#ip_list[@]}
+primary=$(./load_variables primary)
+
+if [ "$cmd" == "start" ];then
+if [ -f "crane.running" ];then
+	./run_crane stop $(cat "crane.running")
+	rm "crane.running"
+fi
+
+k_list=$(seq $n)
+
+# delete old files
+./run_multi "rm -rf ~/crane/.db; rm -rf ~/crane/log" $n
+./run_multi "mkdir ~/crane/log" $n
+
+# generate config files
+cat "node.cfg.head" > "nodes.local.cfg"
+echo "group_size = "$n >> "nodes.local.cfg"
+cat "node.cfg.tail" >> "nodes.local.cfg"
+./scp_multi "nodes.local.cfg" crane $n
+
+# run replicas
+for i in $k_list
+do
+	echo "now is $(($i - 1)) ${ip_list[i]}"
+	if [ "${ip_list[i]}" == "$primary" ];then
+		ssh -t -p $ssh_port $ssh_user@${ip_list[i]} "cd ~/crane;~/crane/server.out -n $i -r -m s -c ~/crane/nodes.local.cfg -l ~/crane/log &> ~/crane/all.log" &
+	else
+		ssh -t -p $ssh_port $ssh_user@${ip_list[i]} "cd ~/crane;~/crane/server.out -n $i -r -m r -c ~/crane/nodes.local.cfg -l ~/crane/log &> ~/crane/all.log" &
+	fi
+done
+
+echo $n > "crane.running"
+
+# run redis
+# ./run_multi "~/crane/redis/src/redis-server --port 7000" $n -b
+# sleep 3
+# export LD_PRELOAD=~/crane/libevent_paxos/client-ld-preload/libclilib.so ~/crane/redis/src/redis-benchmark -h $primary -p 9000 -c $client_num -n 400000 -d 64 -t set
+# ./run stop $n
+
+exit
+fi
+
+if [ "$cmd" == "stop" ];then
+	kill -9 $(pidof redis-benchmark)
+	kill -9 $(pidof redis-server)
+	kill -9 $(pidof server.out)
+	./run_multi "kill -9 \\\$(pidof server.out)" $n
+	./run_multi "kill -9 \\\$(pidof redis-server)" $n
+	rm "crane.running"
+fi

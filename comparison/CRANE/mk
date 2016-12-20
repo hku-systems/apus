@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# build with multi-thread
+thread=1
+
+sudo apt-get install build-essential
+sudo apt-get install libboost-dev git subversion nano libconfig-dev libevent-dev -y
+sudo apt-get install libsqlite3-dev libdb-dev libboost-system-dev autoconf m4 -y
+sudo apt-get install dejagnu flex bison axel zlib1g-dev libbz2-dev libxml-libxml-perl -y
+sudo apt-get install python-pip python-setuptools python-dev libxslt1-dev libxml2-dev wget curl -y
+sudo apt-get install php5-cgi psmisc mencoder sysbench gcc-4.8 g++-4.8 libboost-system-dev libconfig-dev -y
+sudo pip install numpy sudo pip install OutputCheck
+
+cd ~
+git clone https://github.com/columbia/crane.git
+cd crane
+
+# configure PATH
+export MSMR_ROOT=$(pwd)
+export XTERN_ROOT=$MSMR_ROOT/xtern
+export LD_LIBRARY_PATH=$MSMR_ROOT/libevent_paxos/.local/lib:$LD_LIBRARY_PATH
+
+# build xtern
+cd $XTERN_ROOT 
+mkdir obj;
+cd obj 
+../configure --prefix=$XTERN_ROOT/install make clean; make -j$thread; make install
+
+# build crane
+cd $MSMR_ROOT/libevent_paxos ./mk make clean; make -j$thread
+cp $MSMR_ROOT/libevent_paxos/target/server.out $MSMR_ROOT/
+cp $MSMR_ROOT/libevent_paxos/client-ld-preload/libclilib.so.* $MSMR_ROOT/
+
+cd $MSMR_ROOT/apps/redis
+./mk
+mv redis-2.8.17 $MSMR_ROOT/redis
+# sudo apt-get install valgrind
+
+#sudo apt-get install cmake doxygen transfig imagemagick ghostscript subversion 
+#sudo su root cd /usr/share/ git clone https://github.com/DynamoRIO/dynamorio.git cd dynamorio && mkdir build && cd build cmake .. && make -j && make drcov cd tools && ln -s $PWD/../drcov.drrun64 . mkdir lib64 && cd lib64 && mkdir release && cd release ln -s $PWD/../../../clients/lib64/release/libdrcov.so . exit (exit from sudoer)
+
+# install CRIU
+# cd $MSMR_ROOT/tools/criu/ 
+# wget http://download.openvz.org/criu/criu-1.6.tar.bz2 
+# tar jxvf criu-1.6.tar.bz2 
+# sudo apt-get install libprotobuf-dev libprotoc-dev protobuf-c-compiler libprotobuf-c0 libprotobuf-c0-dev asciidoc bsdmainutils protobuf-compiler
+# cd criu-1.6
+# make
+# sudo make install

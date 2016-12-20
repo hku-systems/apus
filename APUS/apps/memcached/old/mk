@@ -1,0 +1,44 @@
+#!/bin/bash
+
+MEM_VER=1.4.25
+MCP_VER=0.1.1
+
+#apt-get update
+#apt-get install -y libevent-dev g++ make wget
+
+#memcached install
+if [ ! -f memcached-$MEM_VER.tar.gz ]
+then
+    wget http://www.memcached.org/files/memcached-$MEM_VER.tar.gz
+else
+    echo "memcached-$MEM_VER.tar.gz exists."
+fi
+tar zxvf memcached-$MEM_VER.tar.gz
+cd memcached-$MEM_VER
+./configure --prefix=`pwd`/../memcached-install
+make 
+make install
+cd ..
+
+#mcperf install to test memcached
+if [ ! -f mcperf-$MCP_VER.tar.gz ]
+then
+    wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/twemperf/mcperf-$MCP_VER.tar.gz
+else
+    echo "mcperf-$MCP_VER.tar.gz exists."
+fi
+tar zxvf mcperf-$MCP_VER.tar.gz
+cd mcperf-$MCP_VER
+./configure --prefix=`pwd`/../mcperf-install
+cp ../before_configure.patch .
+patch -p0 < before_configure.patch
+if [ $? -ne 0 ]
+then
+    echo "Couldn't apply before_configure.patch" 
+    exit 1
+fi
+
+make 
+make install
+cd ..
+

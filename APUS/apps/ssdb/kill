@@ -1,0 +1,10 @@
+#!/bin/bash
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+cd $RDMA_ROOT/apps/redis/ssdb-master
+./ssdb-server ./ssdb.conf -s stop
+
+ssh $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host1) "$RDMA_ROOT/apps/ssdb/ssdb-master/ssdb-server $RDMA_ROOT/apps/ssdb/ssdb-master/ssdb.conf -s stop" &
+ssh $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host2) "$RDMA_ROOT/apps/ssdb/ssdb-master/ssdb-server $RDMA_ROOT/apps/ssdb/ssdb-master/ssdb.conf -s stop" &

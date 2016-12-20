@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ZOO_VER=3.4.6
+FULL_ZOO=zookeeper-$ZOO_VER
+
+wget http://www-eu.apache.org/dist/zookeeper/$FULL_ZOO/$FULL_ZOO.tar.gz
+tar -zxf $FULL_ZOO.tar.gz
+
+sudo apt-get install openjdk-7-jdk
+
+# download testsuite
+git clone https://github.com/phunt/zk-smoketest.git
+
+# build zookeeper
+cd $FULL_ZOO;ant -Djavac.args="-Xlint -Xmaxwarns 1000" clean tar
+

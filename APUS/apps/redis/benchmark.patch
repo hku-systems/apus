@@ -1,0 +1,26 @@
+--- src/redis-benchmark.c	2016-04-06 19:38:05.740000000 +0800
++++ src/redis-benchmark_new.c	2016-04-06 19:37:00.324000000 +0800
+@@ -420,6 +420,7 @@
+ static void showLatencyReport(void) {
+     int i, curlat = 0;
+     float perc, reqpersec;
++    long long sumlatency = 0;
+ 
+     reqpersec = (float)config.requests_finished/((float)config.totlatency/1000);
+     if (!config.quiet && !config.csv) {
+@@ -433,12 +434,14 @@
+ 
+         qsort(config.latency,config.requests,sizeof(long long),compareLatency);
+         for (i = 0; i < config.requests; i++) {
++            sumlatency += config.latency[i];
+             if (config.latency[i]/1000 != curlat || i == (config.requests-1)) {
+                 curlat = config.latency[i]/1000;
+                 perc = ((float)(i+1)*100)/config.requests;
+                 printf("%.2f%% <= %d milliseconds\n", perc, curlat);
+             }
+         }
++        printf("%lld us for %d\n",sumlatency,config.requests);
+         printf("%.2f requests per second\n\n", reqpersec);
+     } else if (config.csv) {
+         printf("\"%s\",\"%.2f\"\n", config.title, reqpersec);
+

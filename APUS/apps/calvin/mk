@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+cd $RDMA_ROOT/apps/calvin
+
+if [ ! -d calvin_bin ]; then
+    git clone https://github.com/yining0417/calvin_bin.git
+fi
+cd calvin_bin
+
+SERVER_ONE_IP=$(cat $RDMA_ROOT/apps/env/local_host)
+SERVER_ONE=$LOGNMAE@$SERVER_ONE_IP
+SERVER_TWO_IP=$(cat $RDMA_ROOT/apps/env/remote_host1)
+SERVER_TWO=$LOGNMAE@$SERVER_TWO_IP
+SERVER_THR_IP=$(cat $RDMA_ROOT/apps/env/remote_host2)
+SERVER_THR=$LOGNMAE@$SERVER_THR_IP
+
+sed -i "s/server_one_ip/$SERVER_ONE_IP/g" ./deploy-run.conf
+sed -i "s/server_two_ip/$SERVER_TWO_IP/g" ./deploy-run.conf
+sed -i "s/server_thr_ip/$SERVER_THR_IP/g" ./deploy-run.conf
+
+sed -i "s/db 0 m 0/db 1 m 0/g" ./run_local.sh
+scp -rp $RDMA_ROOT/apps/calvin/calvin_bin $SERVER_TWO:$RDMA_ROOT/apps/calvin
+sed -i "s/db 1 m 0/db 2 m 0/g" ./run_local.sh
+scp -rp $RDMA_ROOT/apps/calvin/calvin_bin $SERVER_THR:$RDMA_ROOT/apps/calvin
+sed -i "s/db 2 m 0/db 0 m 0/g" ./run_local.sh

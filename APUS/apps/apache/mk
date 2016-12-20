@@ -1,0 +1,16 @@
+#! /bin/bash
+
+PHP_VER=5.4.0
+APP_DIR=/home/wangcheng/Downloads/RDMA_Paxos-master/apps/apache
+
+cd $APP_DIR
+if [ ! -f php-$PHP_VER.tar.gz ]; then
+wget http://ftp.ntu.edu.tw/tmp/php/distributions/php-$PHP_VER.tar.gz
+fi
+tar zxvf php-$PHP_VER.tar.gz
+cd php-$PHP_VER
+
+CFLAGS="" \
+	./configure --prefix=/home/wangcheng/Downloads/RDMA_Paxos-master/apps/apache/install-php --disable-dom --disable-simplexml
+make -j16
+make install

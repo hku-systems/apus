@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc
+fi
+
+cd $RDMA_ROOT/apps/calvin/calvin_bin 
+
+
+ssh $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host1) "cd $RDMA_ROOT/apps/calvin/calvin_bin && ./run_local.sh" 
+ssh $LOGNAME@$(cat $RDMA_ROOT/apps/env/remote_host2) "cd $RDMA_ROOT/apps/calvin/calvin_bin && ./run_local.sh" 
+
+./run_local.sh 
+

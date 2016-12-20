@@ -1,0 +1,34 @@
+--- core/src/main/java/com/yahoo/ycsb/measurements/OneMeasurementHdrHistogram.java	2016-03-21 22:43:36.608000000 +0800
++++ core/src/main/java/com/yahoo/ycsb/measurements/OneMeasurementHdrHistogram_new.java	2016-03-21 14:07:48.492000000 +0800
+@@ -92,6 +92,7 @@
+     * @see com.yahoo.ycsb.OneMeasurement#measure(int)
+     */
+   public void measure(int latencyInMicros) {
++    System.out.println("LATENCY: " + latencyInMicros);
+     histogram.recordValue(latencyInMicros);
+   }
+ 
+
+
+--- core/src/main/java/com/yahoo/ycsb/measurements/OneMeasurementHistogram.java	2016-03-21 22:41:59.140000000 +0800
++++ core/src/main/java/com/yahoo/ycsb/measurements/OneMeasurementHistogram_new.java	2016-03-21 14:02:56.168000000 +0800
+@@ -100,6 +100,7 @@
+   public synchronized void measure(int latency)
+   {
+       //latency reported in us and collected in bucket by ms.
++    System.out.println("LATENCY: " + latency);
+     if (latency/1000>=_buckets)
+     {
+       histogramoverflow++;
+
+
+--- core/src/main/java/com/yahoo/ycsb/measurements/OneMeasurementTimeSeries.java	2016-03-21 22:42:48.284000000 +0800
++++ core/src/main/java/com/yahoo/ycsb/measurements/OneMeasurementTimeSeries_new.java	2016-03-21 01:25:27.949709000 +0800
+@@ -103,6 +103,7 @@
+   @Override
+   public void measure(int latency)
+   {
++    System.out.println("LATENCY: " + latency);
+     checkEndOfUnit(false);
+ 
+     count++;

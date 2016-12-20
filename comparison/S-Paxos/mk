@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# clone S-Paxos
+git clone https://github.com/nfsantos/S-Paxos.git
+
+# replace MapClient to our version
+cp MapClient.java ./S-Paxos/tree/master/src/lsr/paxos/test/
+
+# Build S-Paxos
+cd S-Paxos;ant -Djavac.args="-Xlint -Xmaxwarns 1000" clean jar

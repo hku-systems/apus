@@ -1,0 +1,18 @@
+#!/bin/bash
+
+
+# install deps
+sudo apt-get install cmake libevent-dev libmsgpack-dev -y
+
+# install to ~
+
+git clone https://bitbucket.org/sciascid/libpaxos.git
+
+# build libpaxos
+cd libpaxos
+mkdir build
+cd build
+cmake ../
+make
+
+echo "LibPaxos installed"

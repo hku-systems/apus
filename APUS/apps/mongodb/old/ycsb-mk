@@ -1,0 +1,22 @@
+#!/bin/bash
+#download ycsb and run it
+
+YCSB_VER=0.7.0 
+if [ ! -f ycsb-mongodb-binding-$YCSB_VER.tar.gz ]
+then
+    wget https://github.com/brianfrankcooper/YCSB/releases/download/$YCSB_VER/ycsb-mongodb-binding-$YCSB_VER.tar.gz
+else 
+    echo "ycsb-mongodb-binding-$YCSB_VER.tar.gz exists"
+
+tar xzvf ycsb-mongodb-binding-$YCSB_VER.tar.gz
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,65 @@
+DARE -- Direct Access REplication
+=================================
+
+Brief: A wait-free direct access protocol that uses RDMA features such as QP disconnect and QP timeouts, to ensure highest performance and reliability.
+
+InfiniBand architecture is required.
+For benchmark script, you need to configure list of allocated nodes.
+
+Build DARE
+----------
+1. Prerequisites
+    - libev (version >= 4.15)
+    - libibverbs (version >= 1.0.0)
+2. ./configure --help
+Script for building DARE
+usage  : $0 [options]
+options: [--prefix=DIR]                # Installation directory
+         [--with-ev=DIR]               # libev installation directory: libev.a
+         [--with-ibv=DIR]              # libibverbs installation directory
+3. make
+CFLAGS = -Wl,--no-as-needed#-Wall -Wunused-function #-Wextra
+
+Running benchmarks (from [1])
+-----------------------------
+1. Latency benchmark (i.e., a single client sends requests (according to a trace) to a DARE group)
+./benchmarks/latency_bench.sh --help
+Script for starting DARE's latency benchmark
+usage  : $0 [options]
+options: [--dare=DIR]               # path to DARE bin and lib
+         [--size=INT]               # server count [default 3]
+         [--op=put|get]             # operation type [default put]
+
+2. Throughput benchmark (i.e., multiple clients send requests (according to a trace) to a DARE group)
+./benchmarks/throughput_bench.sh --help
+Script for starting DARE's throughput benchmark
+usage  : $0 [options]
+options: --dare=DIR           # path to DARE bin and lib
+         [--scount=INT]       # server count [default 3]
+         [--ccount=INT]       # client count [default 1]   
+         [--op=put|get]       # operation type [default put]
+         [--bsize=(8-1024)]   # blob size [default 64]   
+         [--proc=(0-100)]     # percentage of op operation [default 100]
+
+3. Group reconfiguration benchmark (i.e., DARE’s write throughput during group reconfiguration)
+./benchmarks/reconf_bench.sh --help
+Script for starting DARE's group reconfiguration benchmark
+usage  : $0 [options]
+options: --dare=DIR           # path to DARE bin and lib
+         [--op=put|get]       # operation type [default put]
+         [--bsize=(8-1024)]   # blob size [default 64]
+
+Note: The benchmarks generate data into $CWD/data, where $CWD is the folder from where the scripts are launched. 
+
+Folder overview
+---------------
+./bin -- binaries
+./lib -- libraries
+./src -- source files
+./include -- header files
+./trace -- trace generator
+./test -- main functions for server/client
+./utils 
+    - rbtree -- red-black Trees implementation (Linux)
+    - libev-4.15.tar.gz 
+

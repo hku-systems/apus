@@ -1,0 +1,80 @@
+#!/bin/bash
+
+MONGO_VER=3.2.4
+YCSB_VER=0.7.0
+
+
+if [ ! -f mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz ]
+then
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz
+else
+    echo "mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz exists."
+fi
+
+tar xzvf mongodb-linux-x86_64-ubuntu1404-$MONGO_VER.tgz
+
+mv mongodb-linux-x86_64-ubuntu1404-3.2.4 mongodb
+
+cd mongodb
+
+#deploy master-slave replication in localhost
+mkdir -p master-slave/master/data
+mkdir -p master-slave/slave1/data
+mkdir -p master-slave/slave2/data
+
+./bin/mongod --dbpath `pwd`/master-slave/master/data \
+             --logpath `pwd`/master-slave/master/data/mongod.log \
+             --pidfilepath `pwd`/master-slave/master/data/mongod.pid \
+             --bind_ip 127.0.0.1 --fork --master \
+             --oplogSize 2048 --logappend --port 27017
+
+./bin/mongod --dbpath `pwd`/master-slave/slave1/data \
+             --logpath `pwd`/master-slave/slave1/data/mongod.log \
+             --pidfilepath `pwd`/master-slave/slave1/data/mongod.pid \
+             --bind_ip 127.0.0.1 --fork --slave --autoresync \
+             --source 127.0.0.1:27017 --logappend --port 27018
+
+./bin/mongod --dbpath `pwd`/master-slave/slave2/data \
+             --logpath `pwd`/master-slave/slave2/data/mongod.log \
+             --pidfilepath `pwd`/master-slave/slave2/data/mongod.pid \
+             --bind_ip 127.0.0.1 --fork --slave --autoresync \
+             --source 127.0.0.1:27017 --logappend --port 27019
+
+#deploy replica-set replication in localhost
+mkdir -p replica-set/master/data
+mkdir -p replica-set/slave1/data
+mkdir -p replica-set/slave2/data
+
+./bin/mongod --dbpath `pwd`/replica-set/master/data \
+             --logpath `pwd`/replica-set/master/data/mongod.log \
+             --pidfilepath `pwd`/replica-set/master/data/mongod.pid \
+             --bind_ip 127.0.0.1 --fork --directoryperdb \
+             --oplogSize 2048 --logappend --port 26017 \
+             --replSet replicaset
+
+./bin/mongod --dbpath `pwd`/replica-set/slave1/data \
+             --logpath `pwd`/replica-set/slave1/data/mongod.log \
+             --pidfilepath `pwd`/replica-set/slave1/data/mongod.pid \
+             --bind_ip 127.0.0.1 --fork --directoryperdb \
+             --oplogSize 2048 --logappend --port 26018 \
+             --replSet replicaset
+        
+./bin/mongod --dbpath `pwd`/replica-set/slave2/data \
+             --logpath `pwd`/replica-set/slave2/data/mongod.log \
+             --pidfilepath `pwd`/replica-set/slave2/data/mongod.pid \
+             --bind_ip 127.0.0.1 --fork --directoryperdb \
+             --oplogSize 2048 --logappend --port 26019 \
+             --replSet replicaset
+
+./bin/mongo 127.0.0.1:26017 replica-set-run.js
+
+cd ..
+
+
+
+
+
+
+
+
+
