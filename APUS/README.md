@@ -10,7 +10,7 @@ $RDMA_ROOT/RDMA/mk
 cd $RDMA_ROOT/apps/test
 ./mk
 ```
-3. Configure the cluster
+3. Configure the cluster (on every node)
 
 You only need to edit `$RDMA_ROOT/RDMA/target/nodes.local.cfg` to replace the `ip_address` in `consensus_config` field.
 
