@@ -18,7 +18,7 @@ struct dare_log_entry_t{
 }__attribute__((packed));
 typedef struct dare_log_entry_t dare_log_entry_t;
 
-#define LOG_SIZE  16384*PAGE_SIZE
+#define LOG_SIZE  16384*PAGE_SIZE*20
 // 16384*PAGE_SIZE = 64MB
 struct dare_log_t
 {
