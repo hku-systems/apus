@@ -10,7 +10,7 @@
 
 #define USE_SPIN_LOCK
 //#define REPLICA_MEASURE_LATENCY
-#define LEADER_MEASURE_LATENCY
+//#define LEADER_MEASURE_LATENCY
 //#define AFFINITY
 
 #define DUMMY_END 'f'
