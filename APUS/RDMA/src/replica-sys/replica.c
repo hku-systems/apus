@@ -16,9 +16,6 @@ int launch_replica_thread(node* my_node, list* excluded_fds, list* excluded_thre
     my_node->cur_view.req_id = 0;
     my_node->cur_view.leader_id = 0;//UNKNOWN_LEADER;
 
-    //zoo_fd = (int*)malloc(sizeof(int));
-    //start_zookeeper(&my_node->cur_view, zoo_fd, my_node->zoo_port);
-    //listAddNodeTail(excluded_fds, (void*)zoo_fd);
     if (my_node->consensus_comp == NULL)
     {
 	fprintf(stderr, "init consensus comp is wrong\n");

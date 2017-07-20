@@ -31,7 +31,6 @@ typedef struct node_t{
 	char* db_name;
 	db* db_ptr;
 	FILE* sys_log_file;
-	int zoo_port;
 
 	pthread_t rep_thread;
 }node;

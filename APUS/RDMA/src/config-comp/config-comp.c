@@ -76,28 +76,6 @@ int consensus_read_config(node* cur_node,const char* config_path){
 		}
 	}
 
-	config_setting_t *zoo_config = NULL;
-
-	zoo_config = config_lookup(&config_file,"zookeeper_config");
-	if(NULL==zoo_config){
-		err_log("CONSENSUS : Cannot Find Nodes Settings.\n");
-		goto goto_config_error;
-	}
-
-	config_setting_t *zoo_ele = config_setting_get_elem(zoo_config,cur_node->node_id);
-	if(NULL==zoo_ele){
-		err_log("CONSENSUS : Cannot Find Current Node's Address Section.\n");
-		goto goto_config_error;
-	}
-
-	int peer_port=-1;
-	if(!config_setting_lookup_int(zoo_ele,"port",&peer_port)){
-		err_log("CONSENSUS : Cannot Find Current Node's Port.\n")
-		goto goto_config_error;
-	}
-
-	cur_node->zoo_port = peer_port;
-
 	config_destroy(&config_file);
 
 	return 0;
