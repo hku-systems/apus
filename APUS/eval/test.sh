@@ -32,7 +32,6 @@ fi
 numberReplica=`expr $# - 3`
 APP_DIR=$RDMA_ROOT/apps/test/bin
 REMOTE_PREPARE_COMMAND="sed -i '3c group_size = $numberReplica' $RDMA_ROOT/RDMA/target/nodes.local.cfg; rm -rf DB_node_test*"
-REMOTE_RUN_COMMAND="env node_id=$j LD_LIBRARY_PATH=$RDMA_ROOT/RDMA/.local/lib cfg_path=$RDMA_ROOT/RDMA/target/nodes.local.cfg LD_PRELOAD=$RDMA_ROOT/RDMA/target/interpose.so $APP_DIR/server 6379 $numConnections $numMessages $messageSize"
 LOCAL_RUN_COMMAND="$APP_DIR/client 6379 $numConnections $numMessages $messageSize"
 
 i=4
@@ -41,6 +40,7 @@ while [ "$i" -le "$#" ]; do
   eval "addr=\${$i}"
   ssh -f $addr $REMOTE_PREPARE_COMMAND
   sleep 2
+  REMOTE_RUN_COMMAND="env node_id=$j LD_LIBRARY_PATH=$RDMA_ROOT/RDMA/.local/lib cfg_path=$RDMA_ROOT/RDMA/target/nodes.local.cfg LD_PRELOAD=$RDMA_ROOT/RDMA/target/interpose.so $APP_DIR/server 6379 $numConnections $numMessages $messageSize"
   ssh -f $addr $REMOTE_RUN_COMMAND
   i=$((i + 1))
   j=$((j + 1))
