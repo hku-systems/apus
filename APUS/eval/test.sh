@@ -25,7 +25,7 @@ fi
 
 numberReplica=`expr $# - 1`
 APP_DIR=$RDMA_ROOT/apps/test/bin
-REMOTE_PREPARE_COMMAND="killall -9 server 1>/dev/null 2>&1; killall -9 client 1>/dev/null 2>&1; sed -i '3c group_size = $numberReplica;' $RDMA_ROOT/RDMA/target/nodes.local.cfg 1>/dev/null 2>&1; rm -rf DB_node_test* 1>/dev/null 2>&1"
+REMOTE_PREPARE_COMMAND="killall -9 server 1>/dev/null 2>&1; sed -i '3c group_size = $numberReplica;' $RDMA_ROOT/RDMA/target/nodes.local.cfg 1>/dev/null 2>&1; rm -rf DB_node_test* 1>/dev/null 2>&1"
 LOCAL_RUN_COMMAND="$APP_DIR/client 6379 1 100 $messageSize"
 
 i=4
