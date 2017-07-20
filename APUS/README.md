@@ -7,6 +7,9 @@ export RDMA_ROOT=`pwd`
 2. Install the prerequisite (on every node)
 ```
 $RDMA_ROOT/RDMA/mk
+cd $RDMA_ROOT/RDMA/target
+make clean
+make
 cd $RDMA_ROOT/apps/test
 ./mk
 ```
@@ -25,4 +28,7 @@ The below example runs 3 replicas, with 1KB-message
 ```
 The test result is saved in `$RDMA_ROOT/eval/test_result.dat`.
 
-**Note:** The test script must be executed on the first node in the list.
+**Note:**
+
+1. The test script must be executed on the first node in the list.
+2. The order of the list addresses must match the order of `ip_address` in `$RDMA_ROOT/RDMA/target/nodes.local.cfg` field.
