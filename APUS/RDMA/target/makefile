@@ -29,7 +29,7 @@ all: interpose.so
 interpose.so: $(OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc-4.8  -shared -Wl,-soname,interpose.so $(OBJS) -Wall -o interpose.so $(LIBS)
+	gcc  -shared -Wl,-soname,interpose.so $(OBJS) -Wall -o interpose.so $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 	@file ./$@
