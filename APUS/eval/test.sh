@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function error_exit() {
-  echo "Usage: test.sh -n=<n> -s=<s> -c=<c> <list of username@server addresses>
+  echo "Usage: test.sh -n<n> -s<s> -c<c> <list of username@server addresses>
   n: the number of messages to be sent by each connection.
   s: the size of a piece of message in bytes.
   c: the number of concurrent connections." >&2;
