@@ -47,4 +47,5 @@ while [ "$i" -le "$#" ]; do
   sleep 2
 done
 
+sleep 5
 $LOCAL_RUN_COMMAND 1>$RDMA_ROOT/eval/test_result.dat 2>&1
