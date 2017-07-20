@@ -126,7 +126,7 @@ static dare_ib_device_t *init_one_device( struct ibv_device* ib_dev )
             }
         }
 
-        device->mtu = ib_port_attr.max_mtu;
+        device->mtu = ib_port_attr.active_mtu;
         info(log_fp, "# ib_port_attr.active_mtu = %"PRIu32" (%d bytes)\n", ib_port_attr.active_mtu, mtu_value(ib_port_attr.active_mtu));
         info(log_fp, "# device->mtu = %"PRIu32" (%d bytes)\n", device->mtu, mtu_value(device->mtu));
 
