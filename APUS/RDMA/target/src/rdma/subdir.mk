@@ -18,7 +18,7 @@ OBJS += \
 src/rdma/%.o: ../src/rdma/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
-	gcc-4.8 -fPIC -rdynamic -std=gnu11 -DDEBUG=$(DEBUGOPT) -I/usr/include/infiniband -O0 -g3 -Wall -c -o "$@" "$<"
+	gcc -fPIC -rdynamic -std=gnu11 -DDEBUG=$(DEBUGOPT) -I/usr/include/infiniband -O0 -g3 -Wall -c -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
