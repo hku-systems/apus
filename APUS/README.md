@@ -1,6 +1,6 @@
 1. Initialize environment (on every node)
 ```
-git clone https://github.com/hku-systems/apus.git
+git clone --recursive https://github.com/hku-systems/apus.git
 cd apus/APUS
 export RDMA_ROOT=`pwd`
 ```
@@ -11,7 +11,8 @@ cd $RDMA_ROOT/RDMA/target
 make clean
 make
 cd $RDMA_ROOT/apps/test
-./mk
+make clean
+make
 ```
 3. Configure the cluster (on every node)
 
