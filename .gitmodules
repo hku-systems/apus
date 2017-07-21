@@ -1,4 +1,4 @@
 [submodule "APUS/apps/test"]
 	path = APUS/apps/test
-	url = git@github.com/LaytonW:SSCCPP.git
+	url = https://github.com/LaytonW/SSCCPP.git
 	branch = master
