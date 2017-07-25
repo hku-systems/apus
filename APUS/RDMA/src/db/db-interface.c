@@ -10,6 +10,9 @@
 #include <time.h>
 #include "../include/db/db-interface.h"
 
+#define USE_BDB
+
+#ifdef USE_BDB
 //#define DEBUG
 //#define USE_ENV
 #define ERROR 1
@@ -113,7 +116,7 @@ db * initialize_db(const char* db_name, uint32_t flag)
 #ifdef USE_ENV
 							db_env,
 #else
-							NULL, 
+							NULL,
 #endif
 							flag)) != 0)
 		{
@@ -125,7 +128,7 @@ db * initialize_db(const char* db_name, uint32_t flag)
 		sprintf(tmp, "%d", i);
 		memcpy(bdb_array[i].name + strlen(dbname_prefix), tmp, strlen(tmp));
 		bdb_array[i].name[strlen(dbname_prefix) + strlen(tmp)] = '\0';
-		
+
 		if((ret = bdb_array[i].dbp->set_pagesize(bdb_array[i].dbp, PAGESIZE)) != 0)
 		{
 			fprintf(stderr, "DB : Set pagesize for Database %d failed: %s\n", i, db_strerror(ret));
@@ -142,7 +145,7 @@ db * initialize_db(const char* db_name, uint32_t flag)
 			fprintf(stderr, "DB : Database %d Open failed: %s\n", i, db_strerror(ret));
 			exit(ERROR);
 		}
-		
+
 		warm_up(bdb_array[i].dbp);
 
 #ifdef DEBUG
@@ -209,7 +212,7 @@ void * db_manage(void *arg)
 #ifdef USE_ENV
 								db_env,
 #else
-								NULL, 
+								NULL,
 #endif
 								flag)) != 0)
 			{
@@ -220,7 +223,7 @@ void * db_manage(void *arg)
 			sprintf(str, "%"PRIu64"", all_db.sum);
 			memcpy(bdb_array[i].name + strlen(dbname_prefix), str, strlen(str));
 			bdb_array[i].name[strlen(dbname_prefix) + strlen(str)] = '\0';
-			
+
 			if((ret = bdb_array[i].dbp->set_pagesize(bdb_array[i].dbp, PAGESIZE)) != 0)
 			{
 				fprintf(stderr, "DB : Set pagesize for Database %"PRIu64" failed: %s\n", all_db.sum, db_strerror(ret));
@@ -237,7 +240,7 @@ void * db_manage(void *arg)
 				fprintf(stderr, "DB : Database %"PRIu64" Open failed: %s\n", all_db.sum, db_strerror(ret));
 				exit(ERROR);
 			}
-			
+
 			warm_up(bdb_array[i].dbp);
 #ifdef DEBUG
 			printf("node_test_%"PRIu64" created.\n", all_db.sum);
@@ -349,7 +352,7 @@ int store_record(db *arg, size_t key_size,void *key_data,size_t data_size,void *
 //#ifdef DEBUG
 //		clock_gettime(CLOCK_MONOTONIC, &end_time);
 //		*diff4 = BILLION * (end_time.tv_sec - start_time.tv_sec) + end_time.tv_nsec - start_time.tv_nsec;
-//#endif		
+//#endif
 	}
 
 	return ret;
@@ -385,7 +388,7 @@ void close_db(db *arg, uint32_t flags)
 	return;
 }
 
-//notice : has the buffer be allocated before calling this function? 
+//notice : has the buffer be allocated before calling this function?
 int retrieve_record(db *arg, size_t key_size,void *key_data,size_t *data_size,void **data)
 {
 	int ret = 1;
@@ -440,15 +443,15 @@ void warm_up(DB *dbp)
 {
 	DBT key, data;
 	uint64_t key_data = 0, data_data = 0;
-	
+
 	memset(&key, 0, sizeof(DBT));
 	memset(&data, 0, sizeof(DBT));
-	
+
 	key.size = sizeof(uint64_t);
 	key.data = &key_data;
 	data.size = sizeof(uint64_t);
 	data.data = &data_data;
-	
+
 	dbp->put(dbp, NULL, &key, &data, DB_AUTO_COMMIT);
 	dbp->del(dbp, NULL, &key, 0);
 }
@@ -465,3 +468,7 @@ uint64_t ato_uint64(char *str)
 
 	return val;
 }
+
+#else
+// TODO: Implement new interface
+#endif
