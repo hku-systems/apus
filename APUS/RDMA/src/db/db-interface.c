@@ -21,6 +21,11 @@
 //ARRAY_SIZE shoule be an even number
 #define BILLION 1000000000UL
 
+#define CHECK_ERROR(e)\
+	(((e) >= 0) ? (void)0 :\
+	(fprintf(stderr, "%s: %d: %s failed: ", __FILE__, __LINE__, #e)\
+    , perror(NULL), exit(ERROR)))
+
 //constants
 const char *db_path = "./DB_";
 const char *dbname_prefix = "node_test_";
