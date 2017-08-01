@@ -10,6 +10,14 @@
 #include <time.h>
 #include "../include/db/db-interface.h"
 
+#define CHECK_ERROR(e)\
+	(((e) >= 0) ? (void)0 :\
+	(fprintf(stderr, "%s: %d: %s failed: ", __FILE__, __LINE__, #e)\
+    , perror(NULL), exit(ERROR)))
+
+const char *db_path = "./DB_";
+const char *dbname_prefix = "node_test_";
+
 #define USE_BDB
 
 #ifdef USE_BDB
@@ -21,14 +29,7 @@
 //ARRAY_SIZE shoule be an even number
 #define BILLION 1000000000UL
 
-#define CHECK_ERROR(e)\
-	(((e) >= 0) ? (void)0 :\
-	(fprintf(stderr, "%s: %d: %s failed: ", __FILE__, __LINE__, #e)\
-    , perror(NULL), exit(ERROR)))
-
 //constants
-const char *db_path = "./DB_";
-const char *dbname_prefix = "node_test_";
 const int MAX_RES = 1;		//notice 2
 const int MAX_PUT = 100000;
 const uint32_t PAGESIZE = 32 * 1024;
