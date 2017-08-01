@@ -1,9 +1,11 @@
+#define _GNU_SOURCE
+
 #include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <db.h>
+// #include <db.h>
 #include <pthread.h>
 #include <inttypes.h>
 #include <unistd.h>
@@ -13,12 +15,12 @@
 #define CHECK_ERROR(e)\
 	(((e) >= 0) ? (void)0 :\
 	(fprintf(stderr, "%s: %d: %s failed: ", __FILE__, __LINE__, #e)\
-    , perror(NULL), exit(ERROR)))
+    , perror(NULL), exit(EXIT_FAILURE)))
 
 const char *db_path = "./DB_";
 const char *dbname_prefix = "node_test_";
 
-#define USE_BDB
+// #define USE_BDB
 
 #ifdef USE_BDB
 //#define DEBUG
@@ -477,4 +479,71 @@ uint64_t ato_uint64(char *str)
 
 #else
 // TODO: Implement new interface
+#include <sys/types.h>
+#include <fcntl.h>
+
+#define SECTOR_SZIE 512
+
+typedef enum {
+  READ = 0,
+  WRITE,
+} op_t;
+
+typedef struct data_t {
+  size_t size;
+  void* opaque;
+} data_t;
+
+typedef struct off_map_t {
+  data_t* map;
+  size_t len;
+} off_map_t;
+
+int db_fd;
+
+const off_t map_offset(const data_t* key, const op_t op);
+const off_t alloc_offset(const data_t* key);
+
+db* initialize_db(const char *db_name, uint32_t flags) {
+  char* db_dir = (char *)malloc(strlen(db_path) + strlen(db_name) + 1);
+  strcat(db_dir, db_path);
+  strcat(db_dir, db_name);
+
+  CHECK_ERROR(mkdir(db_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
+  CHECK_ERROR(chdir(db_dir));
+
+  CHECK_ERROR(db_fd = open("node_test_0",
+                           flags | O_RDWR | O_CREAT | O_DIRECT,
+                           0664));
+  return NULL;
+}
+
+void close_db(db *_, uint32_t flags) {
+  CHECK_ERROR(fsync(db_fd));
+  CHECK_ERROR(close(db_fd));
+}
+
+int store_record(db *_,
+                 size_t key_size, void * key_data,
+                 size_t val_size, void * val_data) {
+  data_t key = {
+    .size = key_size,
+    .opaque = key_data,
+  };
+  const off_t offset = map_offset(&key, WRITE);
+  CHECK_ERROR(pwrite(db_fd, val_data, val_size, offset));
+  return EXIT_SUCCESS;
+}
+
+int retrieve_record(db *_,
+                    size_t  key_size, void *  key_data,
+                    size_t *val_size, void ** val_data) {
+  data_t key = {
+    .size = key_size,
+    .opaque = key_data,
+  };
+  const off_t offset = map_offset(&key, READ);
+  return EXIT_SUCCESS;
+}
+
 #endif
