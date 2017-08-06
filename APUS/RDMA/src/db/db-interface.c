@@ -505,8 +505,15 @@ entry_t* head = NULL;
 #define ENTRY_HEAD (head)
 #define ENTRY_TAIL (head->prev)
 
-#define DL_RSEARCH(head, out, elt, cmp)                                                            \
-  DL_SEARCH2(head, out, elt, cmp, prev)
+#define DL_RFOREACH(head, el)\
+    for ((el) = (head)->prev; (el) != (head); (el) = (el)->prev)
+
+#define DL_RSEARCH(head, out, elt, cmp)\
+  do {\
+      DL_RFOREACH(head, out) {\
+        if ((cmp(out, elt)) == 0) break;\
+      }\
+  } while (0)
 
 pthread_mutex_t mtx;
 
