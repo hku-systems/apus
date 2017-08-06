@@ -1,12 +1,12 @@
 #!/bin/bash
 
 function error_exit() {
-  echo "Usage: test2.sh <p> <list of username@server addresses>
+  echo "Usage: test2.sh -p<p> <list of username@server addresses>
   p: the percentage of bandwidth for other traffic." >&2;
   exit 1
 }
 
-if [[ $# -lt 2 ]]; then
+if [[ $# -lt 3 ]]; then
   error_exit
 fi
 
