@@ -544,7 +544,9 @@ static inline const size_t aligned_size(const size_t val_size) {
 }
 
 db* initialize_db(const char *db_name, uint32_t flags) {
-  char* db_dir = (char *)malloc(strlen(db_path) + strlen(db_name) + 1);
+  size_t dir_size = strlen(db_path) + strlen(db_name) + 1;
+  char* db_dir = (char *)malloc(dir_size);
+  memset(db_dir, 0, dir_size);
   strcat(db_dir, db_path);
   strcat(db_dir, db_name);
 
