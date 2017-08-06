@@ -625,10 +625,6 @@ int store_record(db *_,
   printf("\t[DEBUG] In store_record.\n");
   fflush(stdout);
 #endif
-#ifdef TIME
-  struct timeval start, end;
-  gettimeofday(&start, NULL);
-#endif
   data_t id = {
     .size = id_size,
     .opaque = id_data,
@@ -644,15 +640,19 @@ int store_record(db *_,
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
   memmove(aligned_buffer, val_data, val_size);
+#ifdef TIME
+  struct timeval start, end;
+  gettimeofday(&start, NULL);
+#endif
   CHECK_ERROR(pwrite(db_fd, aligned_buffer, aligned_val_size, offset));
-  free(aligned_buffer);
 #ifdef TIME
   gettimeofday(&end, NULL);
   printf("\t%lu",
-         (end.tv_sec - start.tv_sec) * 1000000 +
-         (end.tv_usec - start.tv_usec));
+  (end.tv_sec - start.tv_sec) * 1000000 +
+  (end.tv_usec - start.tv_usec));
   fflush(stdout);
 #endif
+  free(aligned_buffer);
   return EXIT_SUCCESS;
 }
 
