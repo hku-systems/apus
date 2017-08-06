@@ -30,7 +30,7 @@ REMOTE_PREPARE_COMMAND="killall -9 iperf; sed -i '3c group_size = $numberReplica
 POST_COMMAND="killall -9 iperf"
 GEN_TRAFFIC_SERVER="iperf -s"
 GEN_TRAFFIC_CLIENT="iperf -c 10.22.1.1 -l $trafficPara -t 9999"
-LOCAL_RUN_COMMAND="$APP_DIR/tools/sshd-bench 127.0.0.1 8888 10000 50"
+LOCAL_RUN_COMMAND="$APP_DIR/tools/ssdb-bench 127.0.0.1 8888 10000 50"
 
 i=2
 j=0
