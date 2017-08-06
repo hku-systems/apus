@@ -32,6 +32,8 @@ obj
 *.out
 *.app
 bin
+
 **/dep-lib/*
 !**/dep-lib/*.tar.gz
 **/.local
+*.dat
