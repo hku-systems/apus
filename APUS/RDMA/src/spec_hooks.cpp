@@ -220,9 +220,13 @@ extern "C" ssize_t read(int fd, void *buf, size_t count)
 		orig_read = (orig_read_type) dlsym(RTLD_NEXT, "read");
 	ssize_t ret = orig_read(fd, buf, count);
 
-	if (ret > 0 && ev_mgr != NULL)
-		server_side_on_read(ev_mgr, buf, ret, fd);
-
+  if (ret > 0 && ev_mgr != NULL) {
+    struct stat sb;
+    fstat(fd, &sb);
+    if ((sb.st_mode & S_IFMT) == S_IFSOCK) {
+      server_side_on_read(ev_mgr, buf, ret, fd);
+    }
+  }
 	return ret;
 }
 
@@ -233,7 +237,7 @@ extern "C" ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct
 	static orig_recvfrom_type orig_recvfrom;
 	if (!orig_recvfrom)
 		orig_recvfrom = (orig_recvfrom_type) dlsym(RTLD_NEXT, "recvfrom");
-	
+
 	ssize_t ret = orig_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 	mgr_on_recvfrom(ev_mgr, buf, ret, src_addr);
 	return ret;
@@ -249,7 +253,7 @@ extern "C" ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
         ssize_t ret = orig_recvmsg(sockfd, msg, flags);
         if (ret > 0 && ev_mgr != NULL)
         	server_side_on_read(ev_mgr, msg->msg_iov[0].iov_base, ret, sockfd);
-        
+
         return ret;
 
 }
