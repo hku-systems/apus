@@ -33,5 +33,5 @@ obj
 *.app
 bin
 **/dep-lib/*
-!**/*.tar.gz
+!**/dep-lib/*.tar.gz
 **/.local
