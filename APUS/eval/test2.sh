@@ -12,7 +12,7 @@ fi
 
 while getopts ":p:" opt; do
   case $opt in
-    s) trafficPer="$OPTARG"
+    p) trafficPer="$OPTARG"
     ;;
     \?) error_exit
     ;;
