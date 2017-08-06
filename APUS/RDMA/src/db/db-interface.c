@@ -482,27 +482,30 @@ uint64_t ato_uint64(char *str)
 #include <sys/types.h>
 #include <fcntl.h>
 
-#define SECTOR_SZIE 512
-
-typedef enum {
-  READ = 0,
-  WRITE,
-} op_t;
+#define SECTOR_SIZE 512
 
 typedef struct data_t {
   size_t size;
-  void* opaque;
+  void*  opaque;
 } data_t;
 
-typedef struct off_map_t {
-  data_t* map;
-  size_t len;
-} off_map_t;
+typedef struct entry_t {
+  data_t id;
+  off_t  offset;
+  size_t size;
+} entry_t;
 
 int db_fd;
 
-const off_t map_offset(const data_t* key, const op_t op);
-const off_t alloc_offset(const data_t* key);
+const entry_t get_entry(const data_t* id);
+const off_t alloc_entry(const data_t* id, const size_t val_size);
+
+static inline const size_t aligned_size(const size_t val_size) {
+  size_t remainder = val_size % SECTOR_SIZE;
+  if (remainder == 0)
+    return val_size;
+  return val_size + SECTOR_SIZE - remainder;
+}
 
 db* initialize_db(const char *db_name, uint32_t flags) {
   char* db_dir = (char *)malloc(strlen(db_path) + strlen(db_name) + 1);
@@ -524,25 +527,39 @@ void close_db(db *_, uint32_t flags) {
 }
 
 int store_record(db *_,
-                 size_t key_size, void * key_data,
+                 size_t id_size,  void * id_data,
                  size_t val_size, void * val_data) {
-  data_t key = {
-    .size = key_size,
-    .opaque = key_data,
+  data_t id = {
+    .size = id_size,
+    .opaque = id_data,
   };
-  const off_t offset = map_offset(&key, WRITE);
-  CHECK_ERROR(pwrite(db_fd, val_data, val_size, offset));
+  const off_t offset = alloc_entry(&id, val_size);
+  void * aligned_buffer;
+  const size_t aligned_val_size = aligned_size(val_size);
+  CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
+  memset(aligned_buffer, 0, aligned_val_size);
+  memmove(aligned_buffer, val_data, val_size);
+  CHECK_ERROR(pwrite(db_fd, aligned_buffer, aligned_val_size, offset));
+  free(aligned_buffer);
   return EXIT_SUCCESS;
 }
 
 int retrieve_record(db *_,
-                    size_t  key_size, void *  key_data,
+                    size_t  id_size,  void *  id_data,
                     size_t *val_size, void ** val_data) {
-  data_t key = {
-    .size = key_size,
-    .opaque = key_data,
+  data_t id = {
+    .size = id_size,
+    .opaque = id_data,
   };
-  const off_t offset = map_offset(&key, READ);
+  const entry_t entry = get_entry(&id);
+  *val_size = entry.size;
+  void * aligned_buffer;
+  const size_t aligned_val_size = aligned_size(*val_size);
+  CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
+  memset(aligned_buffer, 0, aligned_val_size);
+  CHECK_ERROR(pread(db_fd, aligned_buffer, aligned_val_size, entry.offset));
+  memmove(*val_data, aligned_buffer, *val_size);
+  free(aligned_buffer);
   return EXIT_SUCCESS;
 }
 
