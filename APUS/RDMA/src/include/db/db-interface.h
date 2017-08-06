@@ -2,6 +2,7 @@
 #define DB_INTERFACE_H
 #include <stdint.h>
 #include <sys/types.h>
+#include "utlist.h"
 
 typedef struct db_t db;
 
