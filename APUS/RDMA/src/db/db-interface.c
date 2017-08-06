@@ -590,6 +590,10 @@ int retrieve_record(db *_,
     .opaque = id_data,
   };
   entry_t* entry = get_entry(&id);
+  if (entry == NULL) {
+    fprintf(stderr, "Get entry failed.\n");
+    return EXIT_FAILURE;
+  }
   *val_size = entry->size;
   void * aligned_buffer;
   const size_t aligned_val_size = aligned_size(*val_size);
