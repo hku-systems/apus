@@ -481,6 +481,9 @@ uint64_t ato_uint64(char *str)
 #include <sys/types.h>
 #include <fcntl.h>
 
+#define DEBUG
+#define TIME
+
 #define SECTOR_SIZE 512
 #define MIN(a, b) ((a) >= (b) ? (b) : (a))
 
@@ -502,8 +505,8 @@ entry_t* head = NULL;
 #define ENTRY_HEAD (head)
 #define ENTRY_TAIL (head->prev)
 
-#define DL_RSEARCH(out,elt,cmp)                                                            \
-  DL_SEARCH2(ENTRY_TAIL,out,elt,cmp,prev)
+#define DL_RSEARCH(head, out, elt, cmp)                                                            \
+  DL_SEARCH2(head, out, elt, cmp, prev)
 
 pthread_mutex_t mtx;
 
@@ -514,15 +517,21 @@ static inline const int id_compare(const entry_t* e1, const entry_t* e2) {
 }
 
 entry_t* get_entry(data_t* id) {
+#ifdef DEBUG
+  printf("\t[DEBUG] In get_entry.\n");
+#endif
   entry_t* res = (entry_t*) malloc(sizeof(entry_t));
   entry_t tar = {.id = id};
   CHECK_ERROR(pthread_mutex_lock(&mtx));
-  DL_RSEARCH(res, &tar, id_compare);
+  DL_RSEARCH(ENTRY_HEAD, res, &tar, id_compare);
   CHECK_ERROR(pthread_mutex_unlock(&mtx));
   return res;
 }
 
 const off_t alloc_entry(const data_t* id, const size_t val_size) {
+#ifdef DEBUG
+  printf("\t[DEBUG] In alloc_entry.\n");
+#endif
   entry_t* new_entry = (entry_t*) malloc(sizeof(entry_t));
   new_entry->id = (data_t*) malloc(sizeof(data_t));
   new_entry->id->size = id->size;
@@ -544,6 +553,9 @@ static inline const size_t aligned_size(const size_t val_size) {
 }
 
 db* initialize_db(const char *db_name, uint32_t flags) {
+#ifdef DEBUG
+  printf("\t[DEBUG] In initialize_db.\n");
+#endif
   size_t dir_size = strlen(db_path) + strlen(db_name) + 1;
   char* db_dir = (char *)malloc(dir_size);
   memset(db_dir, 0, dir_size);
@@ -561,6 +573,9 @@ db* initialize_db(const char *db_name, uint32_t flags) {
 }
 
 void close_db(db *_, uint32_t flags) {
+#ifdef DEBUG
+  printf("\t[DEBUG] In close_db.\n");
+#endif
   CHECK_ERROR(fsync(db_fd));
   CHECK_ERROR(close(db_fd));
   CHECK_ERROR(pthread_mutex_destroy(&mtx));
@@ -569,6 +584,13 @@ void close_db(db *_, uint32_t flags) {
 int store_record(db *_,
                  size_t id_size,  void * id_data,
                  size_t val_size, void * val_data) {
+#ifdef DEBUG
+  printf("\t[DEBUG] In store_record.\n");
+#endif
+#ifdef TIME
+  struct timeval start, end;
+  gettimeofday(&start, NULL);
+#endif
   data_t id = {
     .size = id_size,
     .opaque = id_data,
@@ -576,17 +598,30 @@ int store_record(db *_,
   const off_t offset = alloc_entry(&id, val_size);
   void * aligned_buffer;
   const size_t aligned_val_size = aligned_size(val_size);
+#ifdef DEBUG
+  printf("\t[DEBUG] allocated offset: %d.\n", offset);
+  printf("\t[DEBUG] aligned size: %d.\n", aligned_val_size);
+#endif
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
   memmove(aligned_buffer, val_data, val_size);
   CHECK_ERROR(pwrite(db_fd, aligned_buffer, aligned_val_size, offset));
   free(aligned_buffer);
+#ifdef TIME
+  gettimeofday(&end, NULL);
+  fprintf(stdout, "\t%lu",
+          (end.tv_sec - start.tv_sec) * 1000000 +
+          (end.tv_usec - start.tv_usec));
+#endif
   return EXIT_SUCCESS;
 }
 
 int retrieve_record(db *_,
                     size_t  id_size,  void *  id_data,
                     size_t *val_size, void ** val_data) {
+#ifdef DEBUG
+  printf("\t[DEBUG] In retrieve_record.\n");
+#endif
   data_t id = {
     .size = id_size,
     .opaque = id_data,
@@ -599,6 +634,10 @@ int retrieve_record(db *_,
   *val_size = entry->size;
   void * aligned_buffer;
   const size_t aligned_val_size = aligned_size(*val_size);
+#ifdef DEBUG
+  printf("\t[DEBUG] found offset: %d.\n", entry->offset);
+  printf("\t[DEBUG] aligned size: %d.\n", aligned_val_size);
+#endif
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
   CHECK_ERROR(pread(db_fd, aligned_buffer, aligned_val_size, entry->offset));
