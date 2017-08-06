@@ -564,11 +564,20 @@ db* initialize_db(const char *db_name, uint32_t flags) {
 
   CHECK_ERROR(mkdir(db_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH));
   CHECK_ERROR(chdir(db_dir));
-
+#ifdef DEBUG
+  printf("\t[DEBUG] Creating file.\n");
+#endif
   CHECK_ERROR(db_fd = open("node_test_0",
                            flags | O_RDWR | O_CREAT | O_DIRECT,
                            0664));
+#ifdef DEBUG
+  printf("\t[DEBUG] File created.\n");
+  printf("\t[DEBUG] Initializing mutex lock.\n");
+#endif
   CHECK_ERROR(pthread_mutex_init(&mtx, NULL));
+#ifdef DEBUG
+  printf("\t[DEBUG] Initializing completed.\n");
+#endif
   return NULL;
 }
 
