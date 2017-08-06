@@ -481,8 +481,13 @@ uint64_t ato_uint64(char *str)
 #include <sys/types.h>
 #include <fcntl.h>
 
-#define DEBUG
+// #define DEBUG
+#undef DEBUG
 #define TIME
+
+#ifdef TIME
+#include <sys/time.h>
+#endif
 
 #define SECTOR_SIZE 512
 #define MIN(a, b) ((a) >= (b) ? (b) : (a))
@@ -506,13 +511,15 @@ entry_t* head = NULL;
 #define ENTRY_TAIL (head->prev)
 
 #define DL_RFOREACH(head, el)\
-    for ((el) = (head)->prev; (el) != (head); (el) = (el)->prev)
+  for ((el) = (head)->prev; (el) != (head); (el) = (el)->prev)
 
 #define DL_RSEARCH(head, out, elt, cmp)\
   do {\
-      DL_RFOREACH(head, out) {\
-        if ((cmp(out, elt)) == 0) break;\
-      }\
+    int found = 0;\
+    DL_RFOREACH(head, out) {\
+      if ((cmp(out, elt)) == 0) {found = 1; break;}\
+    }\
+    if (found == 0) out = NULL;\
   } while (0)
 
 pthread_mutex_t mtx;
@@ -535,11 +542,17 @@ entry_t* get_entry(data_t* id) {
   printf("\t[DEBUG] In get_entry.\n");
   fflush(stdout);
 #endif
-  entry_t* res = (entry_t*) malloc(sizeof(entry_t));
   entry_t tar = {.id = id};
+  entry_t* tmp = NULL;
   CHECK_ERROR(pthread_mutex_lock(&mtx));
-  DL_RSEARCH(ENTRY_HEAD, res, &tar, id_compare);
+  DL_RSEARCH(ENTRY_HEAD, tmp, &tar, id_compare);
   CHECK_ERROR(pthread_mutex_unlock(&mtx));
+  if (tmp == NULL) {
+    fprintf(stderr, "Entry not found.\n");
+    return NULL;
+  }
+  entry_t* res = (entry_t*) malloc(sizeof(entry_t));
+  memcpy(res, tmp, sizeof(entry_t));
   return res;
 }
 
@@ -624,8 +637,8 @@ int store_record(db *_,
   void * aligned_buffer;
   const size_t aligned_val_size = aligned_size(val_size);
 #ifdef DEBUG
-  printf("\t[DEBUG] allocated offset: %d.\n", offset);
-  printf("\t[DEBUG] aligned size: %d.\n", aligned_val_size);
+  printf("\t[DEBUG] allocated offset: %lu.\n", offset);
+  printf("\t[DEBUG] aligned size: %lu.\n", aligned_val_size);
   fflush(stdout);
 #endif
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
@@ -635,9 +648,9 @@ int store_record(db *_,
   free(aligned_buffer);
 #ifdef TIME
   gettimeofday(&end, NULL);
-  fprintf(stdout, "\t%lu",
-          (end.tv_sec - start.tv_sec) * 1000000 +
-          (end.tv_usec - start.tv_usec));
+  printf("\t%lu",
+         (end.tv_sec - start.tv_sec) * 1000000 +
+         (end.tv_usec - start.tv_usec));
   fflush(stdout);
 #endif
   return EXIT_SUCCESS;
@@ -657,19 +670,20 @@ int retrieve_record(db *_,
   entry_t* entry = get_entry(&id);
   if (entry == NULL) {
     fprintf(stderr, "Get entry failed.\n");
-    exit(EXIT_FAILURE);
+    return EXIT_FAILURE;
   }
   *val_size = entry->size;
   void * aligned_buffer;
   const size_t aligned_val_size = aligned_size(*val_size);
 #ifdef DEBUG
-  printf("\t[DEBUG] found offset: %d.\n", entry->offset);
-  printf("\t[DEBUG] aligned size: %d.\n", aligned_val_size);
+  printf("\t[DEBUG] found offset: %lu.\n", entry->offset);
+  printf("\t[DEBUG] aligned size: %lu.\n", aligned_val_size);
   fflush(stdout);
 #endif
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
   CHECK_ERROR(pread(db_fd, aligned_buffer, aligned_val_size, entry->offset));
+  *val_data = malloc(*val_size);
   memmove(*val_data, aligned_buffer, *val_size);
   free(aligned_buffer);
   free(entry);
