@@ -515,17 +515,15 @@ entry_t* head = NULL;
 
 #define DL_RSEARCH(head, out, elt, cmp)\
   do {\
-    if (head->prev == head) {\
-      if ((cmp(head, elt) == 0))\
+    int found = 0;\
+    DL_RFOREACH(head, out) {\
+      if ((cmp(out, elt)) == 0) {found = 1; break;}\
+    }\
+    if (found == 0) {\
+      if ((cmp(head, elt)) == 0)\
         out = head;\
       else\
         out = NULL;\
-    } else {\
-      int found = 0;\
-      DL_RFOREACH(head, out) {\
-        if ((cmp(out, elt)) == 0) {found = 1; break;}\
-      }\
-      if (found == 0) out = NULL;\
     }\
   } while (0)
 
