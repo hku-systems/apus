@@ -539,7 +539,7 @@ const off_t alloc_entry(const data_t* id, const size_t val_size) {
   memcpy(new_entry->id->opaque, id->opaque, new_entry->id->size);
   new_entry->size = val_size;
   CHECK_ERROR(pthread_mutex_lock(&mtx));
-  new_entry->offset = ENTRY_TAIL->offset + ENTRY_TAIL->size;
+  new_entry->offset = ENTRY_HEAD ? ENTRY_TAIL->offset + ENTRY_TAIL->size : 0;
   DL_APPEND(ENTRY_HEAD, new_entry);
   CHECK_ERROR(pthread_mutex_unlock(&mtx));
   return new_entry->offset;
@@ -595,6 +595,7 @@ int store_record(db *_,
                  size_t val_size, void * val_data) {
 #ifdef DEBUG
   printf("\t[DEBUG] In store_record.\n");
+  fflush(stdout);
 #endif
 #ifdef TIME
   struct timeval start, end;
