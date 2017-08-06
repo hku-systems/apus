@@ -515,11 +515,18 @@ entry_t* head = NULL;
 
 #define DL_RSEARCH(head, out, elt, cmp)\
   do {\
-    int found = 0;\
-    DL_RFOREACH(head, out) {\
-      if ((cmp(out, elt)) == 0) {found = 1; break;}\
+    if (head->prev == head) {\
+      if ((cmp(head, elt) == 0))\
+        out = head;\
+      else\
+        out = NULL;\
+    } else {\
+      int found = 0;\
+      DL_RFOREACH(head, out) {\
+        if ((cmp(out, elt)) == 0) {found = 1; break;}\
+      }\
+      if (found == 0) out = NULL;\
     }\
-    if (found == 0) out = NULL;\
   } while (0)
 
 pthread_mutex_t mtx;
