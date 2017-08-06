@@ -26,7 +26,7 @@ fi
 numberReplica=`expr $# - 1`
 trafficPara=`echo "$trafficPer * 0.64" | bc`
 APP_DIR=$RDMA_ROOT/apps/ssdb/ssdb-master
-REMOTE_PREPARE_COMMAND="killall -9 iperf; sed -i '3c group_size = $numberReplica;' $RDMA_ROOT/RDMA/target/nodes.local.cfg; rm -rf DB_node_test*"
+REMOTE_PREPARE_COMMAND="killall -9 iperf; killall -9 ssdb-server; sed -i '3c group_size = $numberReplica;' $RDMA_ROOT/RDMA/target/nodes.local.cfg; rm -rf DB_node_test*"
 POST_COMMAND="killall -9 iperf"
 GEN_TRAFFIC_SERVER="iperf -s"
 GEN_TRAFFIC_CLIENT="iperf -c 10.22.1.1 -l $trafficPara -t 9999"
