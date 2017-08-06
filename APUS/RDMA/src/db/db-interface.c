@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include <db.h>
+#include <db.h>
 #include <pthread.h>
 #include <inttypes.h>
 #include <unistd.h>
@@ -478,7 +478,6 @@ uint64_t ato_uint64(char *str)
 }
 
 #else
-// TODO: Implement new interface
 #include <sys/types.h>
 #include <fcntl.h>
 
@@ -517,9 +516,9 @@ static inline const int id_compare(const entry_t* e1, const entry_t* e2) {
 entry_t* get_entry(data_t* id) {
   entry_t* res = (entry_t*) malloc(sizeof(entry_t));
   entry_t tar = {.id = id};
-  pthread_mutex_lock(&mtx);
+  CHECK_ERROR(pthread_mutex_lock(&mtx));
   DL_RSEARCH(res, &tar, id_compare);
-  pthread_mutex_unlock(&mtx);
+  CHECK_ERROR(pthread_mutex_unlock(&mtx));
   return res;
 }
 
@@ -530,10 +529,10 @@ const off_t alloc_entry(const data_t* id, const size_t val_size) {
   new_entry->id->opaque = malloc(new_entry->id->size);
   memcpy(new_entry->id->opaque, id->opaque, new_entry->id->size);
   new_entry->size = val_size;
-  pthread_mutex_lock(&mtx);
+  CHECK_ERROR(pthread_mutex_lock(&mtx));
   new_entry->offset = ENTRY_TAIL->offset + ENTRY_TAIL->size;
   DL_APPEND(ENTRY_HEAD, new_entry);
-  pthread_mutex_unlock(&mtx);
+  CHECK_ERROR(pthread_mutex_unlock(&mtx));
   return new_entry->offset;
 }
 
