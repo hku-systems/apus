@@ -519,6 +519,7 @@ static inline const int id_compare(const entry_t* e1, const entry_t* e2) {
 entry_t* get_entry(data_t* id) {
 #ifdef DEBUG
   printf("\t[DEBUG] In get_entry.\n");
+  fflush(stdout);
 #endif
   entry_t* res = (entry_t*) malloc(sizeof(entry_t));
   entry_t tar = {.id = id};
@@ -531,6 +532,7 @@ entry_t* get_entry(data_t* id) {
 const off_t alloc_entry(const data_t* id, const size_t val_size) {
 #ifdef DEBUG
   printf("\t[DEBUG] In alloc_entry.\n");
+  fflush(stdout);
 #endif
   entry_t* new_entry = (entry_t*) malloc(sizeof(entry_t));
   new_entry->id = (data_t*) malloc(sizeof(data_t));
@@ -555,6 +557,7 @@ static inline const size_t aligned_size(const size_t val_size) {
 db* initialize_db(const char *db_name, uint32_t flags) {
 #ifdef DEBUG
   printf("\t[DEBUG] In initialize_db.\n");
+  fflush(stdout);
 #endif
   size_t dir_size = strlen(db_path) + strlen(db_name) + 1;
   char* db_dir = (char *)malloc(dir_size);
@@ -566,6 +569,7 @@ db* initialize_db(const char *db_name, uint32_t flags) {
   CHECK_ERROR(chdir(db_dir));
 #ifdef DEBUG
   printf("\t[DEBUG] Creating file.\n");
+  fflush(stdout);
 #endif
   CHECK_ERROR(db_fd = open("node_test_0",
                            flags | O_RDWR | O_CREAT | O_DIRECT,
@@ -573,10 +577,12 @@ db* initialize_db(const char *db_name, uint32_t flags) {
 #ifdef DEBUG
   printf("\t[DEBUG] File created.\n");
   printf("\t[DEBUG] Initializing mutex lock.\n");
+  fflush(stdout);
 #endif
   CHECK_ERROR(pthread_mutex_init(&mtx, NULL));
 #ifdef DEBUG
   printf("\t[DEBUG] Initializing completed.\n");
+  fflush(stdout);
 #endif
   return NULL;
 }
@@ -584,6 +590,7 @@ db* initialize_db(const char *db_name, uint32_t flags) {
 void close_db(db *_, uint32_t flags) {
 #ifdef DEBUG
   printf("\t[DEBUG] In close_db.\n");
+  fflush(stdout);
 #endif
   CHECK_ERROR(fsync(db_fd));
   CHECK_ERROR(close(db_fd));
@@ -611,6 +618,7 @@ int store_record(db *_,
 #ifdef DEBUG
   printf("\t[DEBUG] allocated offset: %d.\n", offset);
   printf("\t[DEBUG] aligned size: %d.\n", aligned_val_size);
+  fflush(stdout);
 #endif
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
@@ -622,6 +630,7 @@ int store_record(db *_,
   fprintf(stdout, "\t%lu",
           (end.tv_sec - start.tv_sec) * 1000000 +
           (end.tv_usec - start.tv_usec));
+  fflush(stdout);
 #endif
   return EXIT_SUCCESS;
 }
@@ -631,6 +640,7 @@ int retrieve_record(db *_,
                     size_t *val_size, void ** val_data) {
 #ifdef DEBUG
   printf("\t[DEBUG] In retrieve_record.\n");
+  fflush(stdout);
 #endif
   data_t id = {
     .size = id_size,
@@ -639,7 +649,7 @@ int retrieve_record(db *_,
   entry_t* entry = get_entry(&id);
   if (entry == NULL) {
     fprintf(stderr, "Get entry failed.\n");
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
   }
   *val_size = entry->size;
   void * aligned_buffer;
@@ -647,6 +657,7 @@ int retrieve_record(db *_,
 #ifdef DEBUG
   printf("\t[DEBUG] found offset: %d.\n", entry->offset);
   printf("\t[DEBUG] aligned size: %d.\n", aligned_val_size);
+  fflush(stdout);
 #endif
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
