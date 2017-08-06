@@ -483,6 +483,7 @@ uint64_t ato_uint64(char *str)
 #include <fcntl.h>
 
 #define SECTOR_SIZE 512
+#define MIN(a, b) ((a) >= (b) ? (b) : (a))
 
 typedef struct data_t {
   size_t size;
@@ -490,15 +491,51 @@ typedef struct data_t {
 } data_t;
 
 typedef struct entry_t {
-  data_t id;
-  off_t  offset;
-  size_t size;
+  data_t* id;
+  off_t   offset;
+  size_t  size;
+  struct entry_t* prev;
+  struct entry_t* next;
 } entry_t;
 
 int db_fd;
+entry_t* head = NULL;
+#define ENTRY_HEAD (head)
+#define ENTRY_TAIL (head->prev)
 
-const entry_t get_entry(const data_t* id);
-const off_t alloc_entry(const data_t* id, const size_t val_size);
+#define DL_RSEARCH(out,elt,cmp)                                                            \
+  DL_SEARCH2(ENTRY_TAIL,out,elt,cmp,prev)
+
+pthread_mutex_t mtx;
+
+static inline const int id_compare(const entry_t* e1, const entry_t* e2) {
+  return memcmp(e1->id->opaque,
+                e2->id->opaque,
+                MIN(e1->id->size, e2->id->size));
+}
+
+entry_t* get_entry(data_t* id) {
+  entry_t* res = (entry_t*) malloc(sizeof(entry_t));
+  entry_t tar = {.id = id};
+  pthread_mutex_lock(&mtx);
+  DL_RSEARCH(res, &tar, id_compare);
+  pthread_mutex_unlock(&mtx);
+  return res;
+}
+
+const off_t alloc_entry(const data_t* id, const size_t val_size) {
+  entry_t* new_entry = (entry_t*) malloc(sizeof(entry_t));
+  new_entry->id = (data_t*) malloc(sizeof(data_t));
+  new_entry->id->size = id->size;
+  new_entry->id->opaque = malloc(new_entry->id->size);
+  memcpy(new_entry->id->opaque, id->opaque, new_entry->id->size);
+  new_entry->size = val_size;
+  pthread_mutex_lock(&mtx);
+  new_entry->offset = ENTRY_TAIL->offset + ENTRY_TAIL->size;
+  DL_APPEND(ENTRY_HEAD, new_entry);
+  pthread_mutex_unlock(&mtx);
+  return new_entry->offset;
+}
 
 static inline const size_t aligned_size(const size_t val_size) {
   size_t remainder = val_size % SECTOR_SIZE;
@@ -518,12 +555,14 @@ db* initialize_db(const char *db_name, uint32_t flags) {
   CHECK_ERROR(db_fd = open("node_test_0",
                            flags | O_RDWR | O_CREAT | O_DIRECT,
                            0664));
+  CHECK_ERROR(pthread_mutex_init(&mtx, NULL));
   return NULL;
 }
 
 void close_db(db *_, uint32_t flags) {
   CHECK_ERROR(fsync(db_fd));
   CHECK_ERROR(close(db_fd));
+  CHECK_ERROR(pthread_mutex_destroy(&mtx));
 }
 
 int store_record(db *_,
@@ -551,15 +590,16 @@ int retrieve_record(db *_,
     .size = id_size,
     .opaque = id_data,
   };
-  const entry_t entry = get_entry(&id);
-  *val_size = entry.size;
+  entry_t* entry = get_entry(&id);
+  *val_size = entry->size;
   void * aligned_buffer;
   const size_t aligned_val_size = aligned_size(*val_size);
   CHECK_ERROR(posix_memalign(&aligned_buffer, SECTOR_SIZE, aligned_val_size));
   memset(aligned_buffer, 0, aligned_val_size);
-  CHECK_ERROR(pread(db_fd, aligned_buffer, aligned_val_size, entry.offset));
+  CHECK_ERROR(pread(db_fd, aligned_buffer, aligned_val_size, entry->offset));
   memmove(*val_data, aligned_buffer, *val_size);
   free(aligned_buffer);
+  free(entry);
   return EXIT_SUCCESS;
 }
 
