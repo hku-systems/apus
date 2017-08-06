@@ -516,6 +516,13 @@ static inline const int id_compare(const entry_t* e1, const entry_t* e2) {
                 MIN(e1->id->size, e2->id->size));
 }
 
+static inline const size_t aligned_size(const size_t val_size) {
+  size_t remainder = val_size % SECTOR_SIZE;
+  if (remainder == 0)
+    return val_size;
+  return val_size + SECTOR_SIZE - remainder;
+}
+
 entry_t* get_entry(data_t* id) {
 #ifdef DEBUG
   printf("\t[DEBUG] In get_entry.\n");
@@ -541,17 +548,11 @@ const off_t alloc_entry(const data_t* id, const size_t val_size) {
   memcpy(new_entry->id->opaque, id->opaque, new_entry->id->size);
   new_entry->size = val_size;
   CHECK_ERROR(pthread_mutex_lock(&mtx));
-  new_entry->offset = ENTRY_HEAD ? ENTRY_TAIL->offset + ENTRY_TAIL->size : 0;
+  new_entry->offset = ENTRY_HEAD ?
+                      ENTRY_TAIL->offset + aligned_size(ENTRY_TAIL->size) : 0;
   DL_APPEND(ENTRY_HEAD, new_entry);
   CHECK_ERROR(pthread_mutex_unlock(&mtx));
   return new_entry->offset;
-}
-
-static inline const size_t aligned_size(const size_t val_size) {
-  size_t remainder = val_size % SECTOR_SIZE;
-  if (remainder == 0)
-    return val_size;
-  return val_size + SECTOR_SIZE - remainder;
 }
 
 db* initialize_db(const char *db_name, uint32_t flags) {
