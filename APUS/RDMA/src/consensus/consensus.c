@@ -11,7 +11,6 @@
 #define USE_SPIN_LOCK
 //#define REPLICA_MEASURE_LATENCY
 //#define LEADER_MEASURE_LATENCY
-//#define AFFINITY
 
 #define DUMMY_END 'f'
 
@@ -142,28 +141,10 @@ dare_log_entry_t* leader_handle_submit_req(struct consensus_component_t* comp, s
         pthread_mutex_lock(&comp->lock);
 #endif
 
-#ifdef AFFINITY
-	if (has_set_affinity == 0)
-	{
-		if (core_id > 24)
-			core_id = 1;
-		set_affinity(core_id);
-		core_id++;
-		has_set_affinity = 1;
-		/*int s, policy = SCHED_FIFO;
-		struct sched_param param;
-		param.sched_priority = 1;
-		s = pthread_setschedparam(pthread_self(), policy, &param);
-		if (s != 0)
-			fprintf(stderr, "pthread_setschedparam failed\n");*/
-	}
-#endif
-
         view_stamp next = get_next_view_stamp(comp);
         SYS_LOG(comp, "handling request, view id is %"PRIu32", req id  %"PRIu32", type is %d, data is (%s), size is %zu\n",
 		               next.view_id, next.req_id, type, (char*)data, data_size);
-	//if (type == 2)
-	//fprintf(comp->sys_log_file, "size %zu\n", data_size);
+
         if (type == P_TCP_CONNECT)
         {
             clt_id->view_id = next.view_id;
@@ -228,8 +209,6 @@ dare_log_entry_t* leader_handle_submit_req(struct consensus_component_t* comp, s
 		next.view_id, next.req_id, (void*)entry, SRV_DATA->log->end);
         request_record* record_data = (request_record*)((char*)entry + offsetof(dare_log_entry_t, data_size));
 
-	//fprintf(comp->sys_log_file, "size is %zu, type is %"PRIu8"\n", data_size, type);
-
         if(store_record(comp->db_ptr, sizeof(record_no), &record_no, REQ_RECORD_SIZE(record_data) - 1, record_data))
         {
             fprintf(stderr, "Can not save record from database.\n");
@@ -262,7 +241,7 @@ dare_log_entry_t* leader_handle_submit_req(struct consensus_component_t* comp, s
 recheck:
         for (i = 0; i < comp->group_size; i++) {
             //if (entry->ack[i].msg_vs.view_id == next.view_id && entry->ack[i].msg_vs.req_id == next.req_id)
-	    if(entry->ack[i].node_id != 0)
+	    	if(entry->ack[i].node_id != 0)
             {
                 bit_map = bit_map | (1<<entry->ack[i].node_id);
             }
@@ -279,7 +258,7 @@ recheck:
             comp->highest_committed_vs->req_id = comp->highest_committed_vs->req_id + 1;
 
         }else{
-	    goto recheck;
+	    	goto recheck;
         }
 handle_submit_req_exit:
     return entry;
@@ -294,15 +273,6 @@ void *handle_accept_req(void* arg)
     db_key_type index;
     
     dare_log_entry_t* entry;
-
-    int core_id = (comp->node_id / 8) * 3 + 1; // for 65 nodes
-    //int core_id = 1;
-    //int core_id = (comp->node_id / 8) * 2 - 2; // for 105 nodes
-    //if (core_id <= 0) // for 105 nodes
-    //	core_id += 3; // for 105 nodes
-
-    fprintf(stderr, "\nnid %d is binding to %d\n", comp->node_id, core_id);
-    set_affinity(core_id);
     
     SYS_LOG(comp, "launching replica thread. sys log is %d", comp->sys_log);
 
