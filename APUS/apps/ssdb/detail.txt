@@ -1,2 +1,0 @@
-throughput:  40617.5454545
-latency:  Not supported yet
