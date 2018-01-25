@@ -1,3 +1,0 @@
-/dev/shm dev/shm none bind,create=dir
-/dev/infiniband dev/infiniband none bind,create=dir
-

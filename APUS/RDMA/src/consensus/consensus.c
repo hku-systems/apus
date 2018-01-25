@@ -273,8 +273,6 @@ void *handle_accept_req(void* arg)
     db_key_type index;
     
     dare_log_entry_t* entry;
-    
-    SYS_LOG(comp, "launching replica thread. sys log is %d", comp->sys_log);
 
     for (;;)
     {
@@ -285,32 +283,26 @@ void *handle_accept_req(void* arg)
 
             entry = log_get_entry(SRV_DATA->log, &SRV_DATA->log->end);
 
-            //SYS_LOG(comp, "loop get view %"PRIu32", req id is %"PRIu32", type is %d, size is %zu, entry point %p\n",
-           //	               entry->msg_vs.view_id , entry->msg_vs.req_id, entry->type, entry->data_size, (void*)entry);
             if (entry->data_size != 0)
             {
-                SYS_LOG(comp, "match get view %"PRIu32", req id is %"PRIu32", type is %d, size is %zu, entry point %p, end is %"PRIu64"\n", 
-                               entry->msg_vs.view_id , entry->msg_vs.req_id, entry->type, entry->data_size, (void*)entry, SRV_DATA->log->end);
                 char* dummy = (char*)((char*)entry + log_entry_len(entry) - 1);
                 if (*dummy == DUMMY_END) // atmoic opeartion
                 {
 
 #ifdef REPLICA_MEASURE_LATENCY
-        	    clock_handler c_k;
-        	    clock_init(&c_k);
-        	    clock_add(&c_k);
+                	clock_handler c_k;
+                	clock_init(&c_k);
+                	clock_add(&c_k);
 #endif
 
-                    SYS_LOG(comp, "found view %"PRIu32", req id is %"PRIu32", type is %d, data size is %zu, entry size is %"PRIu32"\n",
-                                   entry->msg_vs.view_id , entry->msg_vs.req_id, entry->type, entry->data_size, log_entry_len(entry));
                     if(entry->msg_vs.view_id < comp->cur_view->view_id){
-                    // TODO
-                    //goto reloop;
+	                    // TODO
+	                    //goto reloop;
                     }
                     // if we this message is not from the current leader
                     if(entry->msg_vs.view_id == comp->cur_view->view_id && entry->node_id != comp->cur_view->leader_id){
-                    // TODO
-                    //goto reloop;
+	                    // TODO
+	                    //goto reloop;
                     }
 
                     // update highest seen request
@@ -334,8 +326,7 @@ void *handle_accept_req(void* arg)
                     //reply->msg_vs.view_id = entry->msg_vs.view_id;
                     //reply->msg_vs.req_id = entry->msg_vs.req_id;
                     
-                    if (entry->type == P_OUTPUT)
-                    {
+                    if (entry->type == P_OUTPUT) {
                         // up = get_mapping_fd() is defined in ev_mgr.c
                         int fd = comp->ug(entry->clt_id, comp->up_para);
                         // consider entry->data as a pointer.
@@ -365,15 +356,11 @@ void *handle_accept_req(void* arg)
                     post_send(entry->node_id, reply, ACCEPT_ACK_SIZE, IBDEV->lcl_mr, IBV_WR_RDMA_WRITE, &rm, send_flags, poll_completion);
 
 
-                    if(view_stamp_comp(&entry->req_canbe_exed, comp->highest_committed_vs) > 0)
-                    {
+                    if(view_stamp_comp(&entry->req_canbe_exed, comp->highest_committed_vs) > 0) {
                         start = vstol(comp->highest_committed_vs)+1;
                         end = vstol(&entry->req_canbe_exed);
-                        SYS_LOG(comp, "start is %"PRIu64", end is  %"PRIu64"\n", start, end);
-                        for(index = start; index <= end; index++)
-                        {
+                        for(index = start; index <= end; index++) {
                             comp->ucb(index,comp->up_para);
-                            SYS_LOG(comp, "finish index %"PRIu64"\n", index);
                         }
                         *(comp->highest_committed_vs) = entry->req_canbe_exed;
                     }
@@ -382,8 +369,6 @@ void *handle_accept_req(void* arg)
             	    clock_add(&c_k);
             	    clock_display(comp->sys_log_file, &c_k, 0, 0);
 #endif
-                    SYS_LOG(comp, "before leaving..... %d, SRV_DATA->log->end is %"PRIu64"\n", entry->msg_vs.view_id, SRV_DATA->log->end);
-
 
                 }   
             }

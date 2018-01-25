@@ -1,7 +1,0 @@
-info files
-
-break main
-break write
-break read
-set env LD_PRELOAD=../hooked/hooked.so
-run

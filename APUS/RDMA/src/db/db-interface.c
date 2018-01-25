@@ -53,18 +53,18 @@ struct
 {
 	db_info *slot_ptr;
 	int slot_pos;
-}store_db;						//notice : store_db is not a pointer but a struct
+}store_db;
 struct
 {
-	DB **all_db_handle;		//notice 1
-	uint64_t sum;			//notice 5
+	DB **all_db_handle;
+	uint64_t sum;
 }all_db;
 int res;
 int put_number;
 pthread_mutex_t mutex, alldb_mtx;
 pthread_cond_t empty, full;
 pthread_rwlock_t rwlock;
-pthread_spinlock_t pn_lock;		//notice 4
+pthread_spinlock_t pn_lock;
 
 //function declaration
 db * initialize_db(const char* db_name, uint32_t flag);
@@ -259,8 +259,6 @@ void * db_manage(void *arg)
 		}
 		pthread_mutex_unlock(&alldb_mtx);
 
-		//finished
-
 		res++;
 		pthread_cond_signal(&full);
 		pthread_mutex_unlock(&mutex);
@@ -291,15 +289,8 @@ void switch_slot()
 	pthread_spin_unlock(&pn_lock);
 }
 
-//#ifdef DEBUG
-//int store_record(db *arg, size_t key_size,void *key_data,size_t data_size,void *data, uint64_t *diff1, uint64_t *diff2, uint64_t *diff3, uint64_t *diff4)
-//#else
 int store_record(db *arg, size_t key_size,void *key_data,size_t data_size,void *data)
-//#endif
 {
-//#ifdef DEBUG
-//	struct timespec start_time, end_time;
-//#endif
 	int ret = 1;
 	DBT key,db_data;
 	db_info *pdb_info;
@@ -311,45 +302,21 @@ int store_record(db *arg, size_t key_size,void *key_data,size_t data_size,void *
 	db_data.data = data;
 	db_data.size = data_size;
 
-//#ifdef DEBUG
-//	clock_gettime(CLOCK_MONOTONIC, &start_time);
-//#endif
 	pthread_rwlock_rdlock(&rwlock);
 	pdb_info = store_db.slot_ptr;
 	pthread_rwlock_unlock(&rwlock);
-//#ifdef DEBUG
-//	clock_gettime(CLOCK_MONOTONIC, &end_time);
-//	*diff1 = BILLION * (end_time.tv_sec - start_time.tv_sec) + end_time.tv_nsec - start_time.tv_nsec;
-//#endif
 
-/*#ifdef DEBUG
-	clock_gettime(CLOCK_MONOTONIC, &start_time);
-	ret = pdb_info->dbp->put(pdb_info->dbp, NULL, &key, &db_data, DB_AUTO_COMMIT);
-	clock_gettime(CLOCK_MONOTONIC, &end_time);
-	*diff2 = BILLION * (end_time.tv_sec - start_time.tv_sec) + end_time.tv_nsec - start_time.tv_nsec;
-	if(ret != 0)
-#else*/
 	if((ret = pdb_info->dbp->put(pdb_info->dbp, NULL, &key, &db_data, DB_AUTO_COMMIT)) != 0)
-//#endif
 	{
 		fprintf(stderr, "DB : Store record failed: %s\n", db_strerror(ret));
 	}
 	else
 	{
-//#ifdef DEBUG
-//		clock_gettime(CLOCK_MONOTONIC, &start_time);
-//#endif
+
 		pthread_spin_lock(&pn_lock);
 		put_number++;
 		pthread_spin_unlock(&pn_lock);
-//#ifdef DEBUG
-//		clock_gettime(CLOCK_MONOTONIC, &end_time);
-//		*diff3 = BILLION * (end_time.tv_sec - start_time.tv_sec) + end_time.tv_nsec - start_time.tv_nsec;
-//#endif
 
-//#ifdef DEBUG
-//		clock_gettime(CLOCK_MONOTONIC, &start_time);
-//#endif
 		if (put_number == MAX_PUT)
 		{
 			if ((store_db.slot_pos + 1) % (ARRAY_SIZE / 2) == 0)
@@ -357,22 +324,15 @@ int store_record(db *arg, size_t key_size,void *key_data,size_t data_size,void *
 			else
 				switch_slot();
 		}
-//#ifdef DEBUG
-//		clock_gettime(CLOCK_MONOTONIC, &end_time);
-//		*diff4 = BILLION * (end_time.tv_sec - start_time.tv_sec) + end_time.tv_nsec - start_time.tv_nsec;
-//#endif
 	}
 
 	return ret;
 }
 
-//what will happen if it is called?
-//notice
 void close_db(db *arg, uint32_t flags)
 {
 	pthread_mutex_lock(&alldb_mtx);
 
-	//close all DB handles
 #ifdef USE_ENV
 	db_env->close(db_env, DB_FORCESYNC);
 #else
@@ -382,21 +342,17 @@ void close_db(db *arg, uint32_t flags)
 			all_db.all_db_handle[i]->close(all_db.all_db_handle[i], flags);
 #endif
 
-	//destroy the sychronization variables
 	pthread_cond_destroy(&empty);
 	pthread_cond_destroy(&full);
 	pthread_rwlock_destroy(&rwlock);
 	pthread_spin_destroy(&pn_lock);
 
-	//free all_db_handle
 	free(all_db.all_db_handle);
-
-	//pthread_mutex_unlock(&alldb_mtx);
 
 	return;
 }
 
-//notice : has the buffer be allocated before calling this function?
+
 int retrieve_record(db *arg, size_t key_size,void *key_data,size_t *data_size,void **data)
 {
 	int ret = 1;
@@ -440,7 +396,6 @@ int retrieve_record(db *arg, size_t key_size,void *key_data,size_t *data_size,vo
 		return DB_NOTFOUND;
 	else
 	{
-		//not sure whether the following is correct
 		*data_size = db_data.size;
 		*data = db_data.data;
 		return 0;

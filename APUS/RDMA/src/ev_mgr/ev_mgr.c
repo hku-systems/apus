@@ -138,74 +138,6 @@ mgr_on_close_exit:
     return;
 }
 
-// This function will malloc space for output_peer array.
-// please remember free it after use.
-output_peer_t* prepare_peer_array(int fd, dare_log_entry_t *log_entry_ptr, uint32_t leader_id, long hash_index, int group_size){
-    
-    // because rsm_op() returns when it reaches quorum
-    
-    struct timespec wait_for_reply;
-    wait_for_reply.tv_sec = 0;
-    wait_for_reply.tv_nsec = 1000 * 5;
-    nanosleep(&wait_for_reply, NULL);
-    
-    output_peer_t* peer_array = (output_peer_t*)malloc(group_size*sizeof(output_peer_t));
-    for (int i=0;i<group_size;i++){
-        peer_array[i].leader_id = leader_id;
-        peer_array[i].node_id = log_entry_ptr->ack[i].node_id;
-        peer_array[i].hash = log_entry_ptr->ack[i].hash;
-        peer_array[i].hash_index = hash_index;
-        peer_array[i].fd = -1;
-    }
-
-    peer_array[leader_id].hash = get_output_hash(fd, hash_index);
-    // I can get leader's fd only.
-    peer_array[leader_id].fd = fd;
-    return peer_array;
-}
-
-// I do not agree with size_t ret, please change this name.
-void mgr_on_check(int fd, const void* buf, size_t ret, event_manager* ev_mgr)
-{
-    if (internal_threads(ev_mgr->excluded_threads, pthread_self()))
-        return;
-    
-    if (ev_mgr->check_output && listSearchKey(ev_mgr->excluded_fds, (void*)&fd) == NULL)
-    {
-        int store_output_rc = 0;
-	SYS_LOG(ev_mgr, "%s", (char*)buf);
-        store_output_rc = store_output(fd, buf, ret);
-        // if store_output return 0 or -1, do not do next things.
-        if (store_output_rc<=0){
-            return; // return directly
-        }
-        uint32_t leader_id = get_leader_id(ev_mgr->con_node);
-        // leader logic
-        if (leader_id == ev_mgr->node_id)
-        {
-            long hash_index = determine_output(fd); 
-            if (-1 != hash_index){
-                // to do output proposal with hash value at this hash_index
-
-                leader_tcp_pair* socket_pair = NULL;
-                HASH_FIND_INT(ev_mgr->leader_tcp_map, &fd, socket_pair);
-                // [TODO] I remove this const to make it easy to pass compile, I will add it back.
-                dare_log_entry_t *log_entry_ptr = rsm_op(ev_mgr->con_node, sizeof(long), &hash_index, P_OUTPUT, &socket_pair->vs);
-                // [TODO] I need learn how to get group size from Cheng.
-                int group_size = 3;
-                // [TODO] how to get all hash values of all nodes in the cluster from log_entry pointer p
-                // [TODO] This method should be reviewd by cheng.
-                // An array will be malloced and filled with hash value and node id
-                output_peer_t* peer_array = prepare_peer_array(fd, log_entry_ptr, leader_id, hash_index, group_size);
-                // make decision about who need to be restored based on the hash value.
-                // Cheng will pass a leader_id to indicate who is the leader.
-                do_decision(peer_array, group_size);
-                free(peer_array);
-            }
-        }
-    }
-}
-
 static int set_blocking(int fd, int blocking) {
     int flags;
 
@@ -337,58 +269,6 @@ static void do_action_send(request_record *retrieve_data,void* arg){
     }
 do_action_send_exit:
     return;
-}
-
-
-//TODO reconnect_init
-
-// 0 is ok
-// reconnect works for cheng
-int reconnect_inner(){
-	return 0;
-}
-
-
-//TODO declear g_checkpoint_flag
-
-// which is called by libevent
-// will modify g_checkpoint_flag
-// will be in the same thread with libevent
-// 0 is ok
-// 1 is rejected
-// -1 is error
-int disconnct_inner(){ 
-    if (NO_DISCONNECTED == g_checkpoint_flag){ // safe to modify 
-        g_checkpoint_flag = DISCONNECTED_REQUEST;
-        // wait for approve
-        while (DISCONNECTED_REQUEST == g_checkpoint_flag){ // until the state will be changed.
-            // do thing.  
-        }
-        if (DISCONNECTED_APPROVE == g_checkpoint_flag){ // safe to disconnect
-	    fprintf(stderr,"disconnect is approved\n");
-            int ret = rc_disconnect_server();
-            if (-1==ret){ // error
-                return ret;
-                //abort();
-            }
-            ret = disconnect_zookeeper();
-            if (-1 == ret){
-                return ret;
-                // abort();
-            }
-            // disconnection is ok
-            g_checkpoint_flag = NO_DISCONNECTED;
-            return ret;
-        }else if (NO_DISCONNECTED == g_checkpoint_flag){ // rejection
-            // rejected
-            return 1;
-        }else{
-            // bug
-        }
-    }else{
-
-    }
-    return 0;
 }
 
 static int check_point_condtion(void* arg)
@@ -529,11 +409,6 @@ event_manager* mgr_init(node_id_t node_id, const char* config_path, const char* 
     }
 
     ev_mgr->db_ptr = initialize_db(ev_mgr->db_name,0);
-
-    /*if(ev_mgr->db_ptr==NULL){
-        err_log("EVENT MANAGER : Cannot Set Up The Database.\n");
-        goto mgr_exit_error;
-    }*/
 
     ev_mgr->leader_tcp_map = NULL;
     ev_mgr->replica_tcp_map = NULL;
