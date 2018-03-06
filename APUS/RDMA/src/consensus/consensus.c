@@ -205,8 +205,6 @@ dare_log_entry_t* leader_handle_submit_req(struct consensus_component_t* comp, s
         entry->clt_id.view_id = (type != P_NOP)?clt_id->view_id:0;
         entry->clt_id.req_id = (type != P_NOP)?clt_id->req_id:0;
 
-        SYS_LOG(comp, "storing view id is  %"PRIu32", req id %"PRIu32", entry addr is %p, end is %"PRIu64"\n", 
-		next.view_id, next.req_id, (void*)entry, SRV_DATA->log->end);
         request_record* record_data = (request_record*)((char*)entry + offsetof(dare_log_entry_t, data_size));
 
         if(store_record(comp->db_ptr, sizeof(record_no), &record_no, REQ_RECORD_SIZE(record_data) - 1, record_data))
@@ -232,8 +230,6 @@ dare_log_entry_t* leader_handle_submit_req(struct consensus_component_t* comp, s
 
             rm.raddr = ep->rc_ep.rmt_mr.raddr + offset;
             rm.rkey = ep->rc_ep.rmt_mr.rkey;
-            SYS_LOG(comp, "sending post to %"PRIu32", remote addr %p, view id is %"PRIu32", req id %"PRIu32", \
-                           type is %d, data is (%s), bip is %"PRIu64"\n", i, (void*)rm.raddr, next.view_id, next.req_id, type, (char*)data, bit_map);
 
             post_send(i, entry, log_entry_len(entry), IBDEV->lcl_mr, IBV_WR_RDMA_WRITE, &rm, send_flags[i], poll_completion[i]);
         }
@@ -325,14 +321,6 @@ void *handle_accept_req(void* arg)
                     reply->node_id = comp->node_id;
                     //reply->msg_vs.view_id = entry->msg_vs.view_id;
                     //reply->msg_vs.req_id = entry->msg_vs.req_id;
-                    
-                    if (entry->type == P_OUTPUT) {
-                        // up = get_mapping_fd() is defined in ev_mgr.c
-                        int fd = comp->ug(entry->clt_id, comp->up_para);
-                        // consider entry->data as a pointer.
-                        uint64_t hash = get_output_hash(fd, *(long*)entry->data);
-                        //reply->hash = hash; 
-                    }
 
                     rem_mem_t rm;
                     dare_ib_ep_t *ep = (dare_ib_ep_t*)SRV_DATA->config.servers[entry->node_id].ep;

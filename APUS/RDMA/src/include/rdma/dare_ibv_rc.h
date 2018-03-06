@@ -35,6 +35,10 @@ struct cm_con_data_t {
 int rc_init();
 void rc_free();
 
+/* Leader election */
+int rc_send_vote_request();
+int rc_send_vote_ack();
+
 int post_send( uint8_t server_id, void *buf, uint32_t len, struct ibv_mr *mr, enum ibv_wr_opcode opcode, rem_mem_t *rm, int signaled, int poll_completion);
 int rc_disconnect_server();
 

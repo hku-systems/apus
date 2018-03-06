@@ -76,4 +76,11 @@ int dare_init_ib_rc();
 void dare_ib_srv_shutdown();
 int find_max_inline(struct ibv_context *context, struct ibv_pd *pd, uint32_t *max_inline_arg );
 
+/* HB mechanism */
+int dare_ib_send_hb();
+
+/* Leader election */
+int dare_ib_send_vote_request();
+int dare_ib_send_vote_ack();
+
 #endif /* DARE_IBV_H */

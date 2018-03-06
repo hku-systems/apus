@@ -67,6 +67,12 @@ int dare_init_ib_rc()
     return rc_init();
 }
 
+int dare_ib_send_hb()
+{
+    return rc_send_hb();
+}
+
+
 static dare_ib_device_t *init_one_device( struct ibv_device* ib_dev )
 {
     int i;
@@ -243,4 +249,14 @@ int find_max_inline(struct ibv_context *context, struct ibv_pd *pd, uint32_t *ma
     }
 
     return rc;
+}
+
+int dare_ib_send_vote_ack()
+{
+    return rc_send_vote_ack();
+}
+
+int  dare_ib_send_vote_request()
+{
+    return rc_send_vote_request();
 }

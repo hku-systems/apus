@@ -30,7 +30,9 @@ struct dare_log_t
                     if end==head the buffer is full */
     uint64_t tail;  /* offset of the last entry
                     Note: tail + sizeof(last_entry) == end */
-    
+    uint64_t commit; /* offset of the first not committed entry 
+                    the leader overlaps all entries from commit to end of 
+                    its own log */    
     uint64_t len;
     
     uint8_t entries[0];

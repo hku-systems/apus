@@ -475,6 +475,160 @@ static int rc_qp_rtr_to_rts(dare_ib_ep_t *ep)
     return 0;
 }
 
+int rc_send_vote_request()
+{
+    int rc;
+    uint8_t i, size = SRV_DATA->config.cid.size[0];
+    uint8_t idx = SRV_DATA->config.idx;
+    dare_ib_ep_t *ep;
+    rem_mem_t rm;
+    
+    /* Set vote request */
+    vote_req_t *request = &(SRV_DATA->ctrl_data->vote_req[idx]);
+    request->sid = SRV_DATA->ctrl_data->sid;
+    if (is_log_empty(SRV_DATA->log)) {
+        /* The log is empty */
+        request->index = 0;
+        request->term = 0;
+    }
+    request->cid = SRV_DATA->config.cid;
+
+    /* Set remote offset */
+    uint32_t offset = (uint32_t) (offsetof(ctrl_data_t, vote_req) 
+                    + sizeof(vote_req_t) * idx);
+    
+    /* Issue RDMA Write operations */
+    for (i = 0; i < size; i++) {
+        if (idx == i) continue;
+        if (!CID_IS_SERVER_ON(SRV_DATA->config.cid, i)) {
+            //posted_sends[i] = -1;  // insuccess
+            continue;
+        }
+        ep = (dare_ib_ep_t*)SRV_DATA->config.servers[i].ep;
+        if (0 == ep->rc_connected) {
+            continue;
+        }
+        // text(log_fp, "   (p%"PRIu8")\n", i);
+        
+        /* Set address and key of remote memory region */
+        rm.raddr = ep->rc_ep.rmt_mr.raddr + offset;
+        rm.rkey = ep->rc_ep.rmt_mr.rkey;
+        
+        rc = post_send(i, request, sizeof(vote_req_t), 
+                        IBDEV->lcl_mr, IBV_WR_RDMA_WRITE, 
+                        &rm, 1, 1);
+        if (0 != rc) {
+            /* This should never happen */
+            // error_return(1, log_fp, "Cannot post send operation\n");
+        }
+        //debug(log_fp, "Sent vote request to %"PRIu8"\n", i);
+    }
+
+    return 0;
+}
+
+int rc_send_hb()
+{
+    int rc;
+    dare_ib_ep_t *ep;
+    uint8_t i, size;
+    
+    /* No need to send HBs to servers in the extended config */
+    size = SRV_DATA->config.cid.size[0];
+    
+    /* Set offset accordingly */
+    uint32_t offset = (uint32_t) (offsetof(ctrl_data_t, hb) 
+                    + sizeof(uint64_t) * SRV_DATA->config.idx);
+    
+
+    //TIMER_START(log_fp, "Sending HB (%"PRIu64")\n", ssn);
+    for (i = 0; i < size; i++) {
+        if (i == SRV_DATA->config.idx) continue;
+        if (!CID_IS_SERVER_ON(SRV_DATA->config.cid, i)) {
+            continue;
+        }
+        ep = (dare_ib_ep_t*)SRV_DATA->config.servers[i].ep;
+        if (0 == ep->rc_connected) {
+            continue;
+        }
+        //text(log_fp, "   (p%"PRIu8")\n", i);
+        
+        rem_mem_t rm;
+        rm.raddr = ep->rc_ep.rmt_mr.raddr + offset;
+        rm.rkey = ep->rc_ep.rmt_mr.rkey;
+
+        rc = post_send(i, &SRV_DATA->ctrl_data->sid,
+                        sizeof(uint64_t), IBDEV->lcl_mr,
+                        IBV_WR_RDMA_WRITE, &rm, 0, 0);
+        if (0 != rc) {
+            /* This should never happen */
+            // error_return(1, log_fp, "Cannot post send operation\n");
+        }
+    }
+    //TIMER_STOP(log_fp);
+
+    return 0;
+}
+
+/**
+ * Send vote ACK to the candidate
+ * The ACK is the local commit offset 
+ * Note: the ack may or may not reach the destination
+ */
+int rc_send_vote_ack()
+{
+    int rc, i;
+    dare_ib_ep_t *ep;
+    rem_mem_t rm;
+    uint8_t candidate = SID_GET_IDX(SRV_DATA->ctrl_data->sid);
+    uint8_t idx = SRV_DATA->config.idx;
+    int posted_sends[MAX_SERVER_COUNT];
+
+    /* Get remote endpoint */
+    if (!CID_IS_SERVER_ON(SRV_DATA->config.cid, candidate)) {
+        return 0;
+    }
+    ep = (dare_ib_ep_t*)SRV_DATA->config.servers[candidate].ep;
+       
+    /* Set remote offset */
+    uint32_t offset = (uint32_t)(offsetof(ctrl_data_t, vote_ack) + 
+                            sizeof(uint64_t) * idx) ;
+                            
+    /* Set address and key of remote memory region */
+    rm.raddr = ep->rc_ep.rmt_mr.raddr + offset;
+    rm.rkey = ep->rc_ep.rmt_mr.rkey;
+    
+    /* Post send just for the candidate */
+    for (i = 0; i < MAX_SERVER_COUNT; i++) {
+        posted_sends[i] = -1;
+    }
+    posted_sends[candidate] = 1;
+    // ssn++;
+    // text(log_fp, "Send vote ACK to p%"PRIu8" (%"PRIu64")\n", candidate, ssn);
+    /* server_id, qp_id, buf, len, mr, opcode, signaled, rm, posted_sends */ 
+    rc = post_send(candidate, &SRV_DATA->log->commit, 
+                    sizeof(uint64_t), IBDEV->lcl_mr, 
+                    IBV_WR_RDMA_WRITE, &rm, 1, 1); 
+    if (0 != rc) {
+        /* This should never happen */
+        // error_return(1, log_fp, "Cannot post send operation\n");
+    }
+    
+    /* Make sure the candidate gets the ACK; if not, then probably it failed */
+    // rc = wait_for_one(posted_sends, CTRL_QP);
+    // if (RC_ERROR == rc) {
+        /* This should never happen */
+        // error_return(1, log_fp, "Cannot send vote ACK\n");
+    // }
+    // if (RC_SUCCESS != rc) {
+        /* Operation failed; thus, the candidate has probably failed */
+        // return -1;
+    // }
+
+    return 0;
+}
+
+
 #define BILLION 1000000000L
 
 int post_send(uint8_t server_id, void *buf, uint32_t len, struct ibv_mr *mr, enum ibv_wr_opcode opcode, rem_mem_t *rm, int signaled, int poll_completion)
@@ -515,27 +669,11 @@ int post_send(uint8_t server_id, void *buf, uint32_t len, struct ibv_mr *mr, enu
     wr.wr.rdma.remote_addr = rm->raddr;
 
     wr.wr.rdma.rkey        = rm->rkey;
-#ifdef MEASURE_TIME
-    static FILE*fp;
-    if(fp == NULL)
-    {
-	fp = fopen("ibv_post_send.txt", "w");
-	if (fp == NULL)
-		fprintf(stderr, "ibv_post_send.txt open failed\n");
-    }
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-#endif
     rc = ibv_post_send(ep->rc_ep.rc_qp.qp, &wr, &bad_wr);
     if (0 != rc) {
         error_return(1, log_fp, "ibv_post_send failed because %s [%s]\n", 
             strerror(rc), rc == EINVAL ? "EINVAL" : rc == ENOMEM ? "ENOMEM" : rc == EFAULT ? "EFAULT" : "UNKNOWN");
     }
-#ifdef MEASURE_TIME
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    uint64_t diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
-    fprintf(fp, "pid=%d ,len=%d %llu\n", pthread_self(), len, (long long unsigned int) diff);
-#endif
     return 0;
 }
 
@@ -569,7 +707,7 @@ int rc_disconnect_server()
     //fprintf(stderr, "entering disconnect, group size is %"PRIu32"\n", SRV_DATA->config.cid.size);
     uint8_t i;
     dare_ib_ep_t *ep;
-    for (i = 0; i < SRV_DATA->config.cid.size; i++)
+    for (i = 0; i < SRV_DATA->config.cid.size[0]; i++)
     {
         ep = (dare_ib_ep_t*)SRV_DATA->config.servers[i].ep;
 	//fprintf(stderr, "ndoe id %"PRIu32" is destroying %"PRIu32", ep->rc_connected is %d\n", SRV_DATA->config.idx, i, ep->rc_connected);
