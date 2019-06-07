@@ -1,0 +1,1 @@
+LIBS := -lsupc++ -lpthread -lstdc++ -lrt

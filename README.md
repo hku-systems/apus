@@ -1,15 +1,41 @@
-# APUS
+# APUS: fast and scalable paxos on RDMA
 
-This project combines RDMA and Paxos. The raw evaluation results are available here:  
-1. [performance on replicated programs](https://docs.google.com/spreadsheets/d/1MvrqbfpKeLdDNBBNahvRja3pGs5ilBgtL7p-QUyhYwk/edit#gid=0)  
-2. [consensus latency breakdown](https://docs.google.com/spreadsheets/d/1MvrqbfpKeLdDNBBNahvRja3pGs5ilBgtL7p-QUyhYwk/edit#gid=976109886)  
-3. [scalability comparison with DARE](https://docs.google.com/spreadsheets/d/1MvrqbfpKeLdDNBBNahvRja3pGs5ilBgtL7p-QUyhYwk/edit#gid=780560038).
-  
-OS: Ubuntu 14.04.02 64bit.
-## How to run
-### Install the dependencies for the program
-Use $RDMA_ROOT/RDMA/mk to download and install the dependencies for the program.
-### Install the applications
-We have prepared all the Makefiles for you in each application's directory.
-### Run the evaluation framework
-For example, to run Redis hooked by APUS, just go to $RDMA_ROOT/eval and run `python eval.py -f redis-output.cfg`. After that, you can collect the results by `cd current`.
+Build (Ubuntu Linux 15.04)
+----
+
+The source code of APUS is based on DARE [HPDC'15]
+### Dependencies
+Install libev, libconfig, libdb, libibverbs:
+```
+sudo apt-get install libev-dev libconfig-dev libdb-dev
+```
+### Build APUS
+Set env vars:
+```
+export PAXOS_ROOT=<absolute path of RDMA-PAXOS>
+```
+To perform a default build execute the following:
+```
+cd target
+make clean; make
+```
+Run examples
+----
+
+### Run APUS with Redis
+
+Install Redis:
+```
+cd apps/redis
+./mk
+```
+Run APUS with Redis:
+```
+cd benchmarks
+./run.sh --app=redis
+```
+
+Contact
+----
+
+Please send emails to Wang Cheng (wangch.will@gmail.com) If you encounter any problems.

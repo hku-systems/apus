@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# benchmark use memslap from libmemcached, source code in libmemcached-1.0.18/clients/memslap.cc
+
+# variables
+APP_VER=1.4.21
+BEN_VER=1.0.18
+APP_DIR=$PAXOS_ROOT/apps/memcached
+
+# working folder
+cd $APP_DIR
+
+# remove folders
+rm -rf memcached-$APP_VER
+rm -rf install
+rm -rf libmemcached-$BEN_VER
+rm -rf benchmark
+
+# download and extract
+if [ ! -f memcached-$APP_VER.tar.gz ]; then
+    wget http://www.memcached.org/files/memcached-$APP_VER.tar.gz
+fi
+tar zxvf memcached-$APP_VER.tar.gz
+
+# build
+cd memcached-$APP_VER
+mkdir ../install
+./configure --prefix=$APP_DIR/install
+make -j `nproc`
+make install
+
+
+# download benchmark
+cd ../
+if [ ! -f libmemcached-$BEN_VER.tar.gz ]; then
+    wget https://launchpad.net/libmemcached/1.0/1.0.18/+download/libmemcached-$BEN_VER.tar.gz
+fi
+tar zxvf libmemcached-$BEN_VER.tar.gz
+
+
+# build benchmark
+cd libmemcached-$BEN_VER
+mkdir ../benchmark
+./configure --prefix=$APP_DIR/benchmark
+make -j `nproc`
+make install
+

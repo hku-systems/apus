@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# benchmark redis-benchmark in redis-2.8.17/src/redis-benchmark.c
+
+APP_VER=2.8.17
+APP_DIR=$PAXOS_ROOT/apps/redis
+
+# download
+cd $APP_DIR
+rm -rf redis-$APP_VER
+rm -rf install
+if [ ! -f redis-$APP_VER.tar.gz ]; then
+    wget http://download.redis.io/releases/redis-$APP_VER.tar.gz
+fi
+tar zxvf redis-$APP_VER.tar.gz
+
+# build
+cd redis-$APP_VER
+make
+make install PREFIX=$APP_DIR/install

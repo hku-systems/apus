@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# variables
+APP_DIR=$PAXOS_ROOT/apps/ssdb
+
+# start servere
+# ./ssdb-server [-d] /path/to/ssdb.conf [-s start|stop|restart]
+# Options:
+#     -d    run as daemon
+#     -s    option to start|stop|restart the server
+cd $APP_DIR/ssdb-master
+./ssdb-server ssdb.conf
+sleep 1
+
+# benchmark
+# ./ssdb-bench [ip] [port] [requests] [clients]
+# Options:
+#     ip          server ip (default 127.0.0.1)
+#     port        server port (default 8888)
+#     requests    Total number of requests (default 10000)
+#     clients     Number of parallel connections (default 50)
+./tools/ssdb-bench 127.0.0.1 8888 10000 50
+# SSDB supports Redis network protocol, you can use Redis clients to connect to a SSDB server and operate on it.
+
+# stop server
+kill -SIGINT $(cat ./var/ssdb.pid)

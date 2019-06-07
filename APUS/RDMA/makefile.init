@@ -1,3 +1,0 @@
-ROOT_DIR := $(shell pwd)
-DEBUGOPT := 0
-ZK_HOME  := /usr/share/zookeeper-3.4.6

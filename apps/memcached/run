@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# variables
+APP_DIR=$PAXOS_ROOT/apps/memcached
+ 
+# start server
+# -p <num>      TCP port number to listen on (default: 11211)
+# -d            run as a daemon
+# -P <file>     save PID in <file>, only used with -d option
+# -m <num>      max memory to use for items in megabytes (default: 64 MB)
+# -M            return error on memory exhausted (rather than removing items)
+# -u <username> assume identity of <username> (only when run as root)
+cd $APP_DIR/install
+bin/memcached -p 11222 -P $APP_DIR/install/memcached.pid &
+sleep 1
+
+# benchmack
+# Generates a load against a memcached custer of servers.
+# --concurrency=
+#        Number of users to simulate with load.
+# --execute-number=
+#        Number of times to execute the given test.
+# --servers=
+#        List which servers you wish to connect to.
+cd ../benchmark
+bin/memslap -s 127.0.0.1:11222 --concurrency=10 --execute-number=5000
+
+# stop server
+cd ../install
+kill $(cat memcached.pid)
+rm memcached.pid
+

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# benchmark source in ssdb/master/tools/ssdb-bench.cpp
+
+# variables
+APP_DIR=$PAXOS_ROOT/apps/ssdb
+
+# working folder
+cd $APP_DIR
+
+# remove folders
+rm -rf ssdb-master
+
+# download and extract
+if [ ! -f master.tar.gz ]; then
+    wget https://github.com/ideawu/ssdb/archive/master.tar.gz
+fi
+tar zxvf master.tar.gz
+
+# build
+cd ssdb-master
+CFLAGS="-g -O0" CXXFLAGS="-g -O0" make
+
+# config
+sed -i 's/ip: 127.0.0.1/#ip: 127.0.0.1/' ./ssdb.conf
+sed -i 's/#ip: 0.0.0.0/ip: 0.0.0.0/' ./ssdb.conf
