@@ -38,4 +38,4 @@ cd benchmarks
 Contact
 ----
 
-Please send emails to Wang Cheng (wangch.will@gmail.com) If you encounter any problems.
+Please send emails to Wang Cheng (wangch.will@gmail.com) If you have any problems about APUS.
